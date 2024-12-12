@@ -1,146 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Location Map</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/markerclustererplus/2.1.4/markerclusterer.min.js"></script>
+    <title>Photo Locations Map</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            height: 100vh;
-            width: 100%;
-        }
-        .info-window {
-            padding: 10px;
-            max-width: 300px;
-        }
-        .info-window img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 10px;
-        }
-        .info-window h3 {
-            margin: 0 0 10px 0;
-        }
-        .info-window p {
-            margin: 5px 0;
-        }
+        #map { height: 100vh; width: 100%; }
+        body { margin: 0; }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    
     <script>
-        // Configuration
-        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyTakp0pKcwdVnZmcCaxpJwUCcHdfN0Z-RnIXwfUIi-JycG4fEQQaeHVspkaCUY1jMlIw/exec';
-        
-        // Initialize the map
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 4,
-                center: { lat: 0, lng: 0 },
-                mapTypeControl: true,
-                streetViewControl: false,
-                fullscreenControl: true
+                zoom: 7,
+                center: { lat: 7.9465, lng: -1.0232 }, // Ghana
             });
-            
-            fetchLocations(map);
+
+            // Fetch data from your Google Sheet
+            fetch('https://opensheet.elk.sh/1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8/Sheet1')
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(row => {
+                        const marker = new google.maps.Marker({
+                            position: {
+                                lat: parseFloat(row.latitude),
+                                lng: parseFloat(row.longitude)
+                            },
+                            map: map,
+                            title: row.community
+                        });
+
+                        const infowindow = new google.maps.InfoWindow({
+                            content: `
+                                <h3>${row.community}</h3>
+                                <p>By: ${row.username}</p>
+                                <img src="${row.photourl}" width="200">
+                            `
+                        });
+
+                        marker.addListener('click', () => {
+                            infowindow.open(map, marker);
+                        });
+                    });
+                });
         }
-        
-      
-        
-        async function fetchLocations(map) {
-    try {
-        const response = await fetch(SHEET_URL, {
-            method: 'GET',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        });
 
-        // Log the response for debugging
-        console.log('Response received:', response);
-
-        // Add some test markers while we debug
-        const testData = [
-            {
-                latitude: 6.6745,
-                longitude: -1.5716,
-                community: 'Test Location',
-                username: 'Test User',
-                timestamp: new Date(),
-                photoUrl: '/api/placeholder/400/320'
-            }
-        ];
-        
-        const markers = testData.map(location => {
-            const marker = new google.maps.Marker({
-                position: {
-                    lat: parseFloat(location.latitude),
-                    lng: parseFloat(location.longitude)
-                },
-                title: location.community,
-                map: map
-            });
-            
-            const infoWindow = new google.maps.InfoWindow({
-                content: createInfoWindowContent(location)
-            });
-            
-            marker.addListener('click', () => {
-                infoWindow.open(map, marker);
-            });
-            
-            return marker;
-        });
-        
-        // Add marker clustering
-        new MarkerClusterer(map, markers, {
-            imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
-        });
-        
-        // Center map on Ghana
-        map.setCenter({ lat: 7.9465, lng: -1.0232 });
-        map.setZoom(7);
-        
-    } catch (error) {
-        console.error('Error fetching location data:', error);
-        alert('Error loading location data. Please try again later.');
-    }
-}
-
-
-
-
-
-
-
-
-        
-        
-        // Create info window content
-        function createInfoWindowContent(location) {
-            return `
-                <div class="info-window">
-                    <h3>${location.community}</h3>
-                    <p><strong>Photographer:</strong> ${location.username}</p>
-                    <p><strong>Date:</strong> ${new Date(location.timestamp).toLocaleDateString()}</p>
-                    <p><strong>Photos at this location:</strong> ${location.photoCount || 1}</p>
-                    <a href="${location.photoUrl}" target="_blank">
-                        <img src="${location.photoUrl}" alt="Location photo">
-                    </a>
-                </div>
-            `;
-        }
-        
-        // Initialize the map when the page loads
         window.onload = initMap;
     </script>
 </body>
