@@ -3,43 +3,20 @@
 <head>
     <title>Flyer Locations Map</title>
     <style>
-        #map { 
-            height: 100vh; 
-            width: 100%; 
-        }
-        body { 
-            margin: 0; 
-            font-family: Arial, sans-serif;
-        }
-        .info-window { 
-            max-width: 300px; 
-            padding: 10px;
-        }
+        #map { height: 100vh; width: 100%; }
+        body { margin: 0; }
+        .info-window { max-width: 300px; }
         .info-window img { 
             max-width: 100%; 
             height: auto; 
             margin-top: 10px;
-            border-radius: 4px;
         }
-        .custom-marker {
-            background-color: #4285F4;
-            border-radius: 50%;
-            padding: 8px;
-            color: white;
-            font-weight: bold;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .marker-tooltip {
-            position: absolute;
-            background: white;
-            padding: 5px 10px;
-            border-radius: 4px;
+        .marker-label {
+            background-color: white;
+            padding: 2px 6px;
             border: 1px solid #ccc;
+            border-radius: 3px;
             font-size: 12px;
-            white-space: nowrap;
-            transform: translate(-50%, -130%);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -62,32 +39,12 @@
             }
         }
 
-        function createCustomMarker(community) {
-            const div = document.createElement('div');
-            div.className = 'custom-marker';
-            div.textContent = community.charAt(0).toUpperCase();
-            
-            const tooltip = document.createElement('div');
-            tooltip.className = 'marker-tooltip';
-            tooltip.textContent = community;
-            div.appendChild(tooltip);
-            
-            return div;
-        }
-
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
                 center: { lat: 33.93864, lng: -84.4953 },
                 minZoom: 2,
                 maxZoom: 18,
-                mapTypeControl: true,
-                mapTypeControlOptions: {
-                    style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                    position: google.maps.ControlPosition.TOP_RIGHT
-                },
-                fullscreenControl: true,
-                streetViewControl: true,
                 restriction: {
                     latLngBounds: {
                         north: 85,
@@ -105,34 +62,35 @@
                     const data = JSON.parse(text.substring(47).slice(0, -2));
                     const bounds = new google.maps.LatLngBounds();
                     let hasValidMarkers = false;
-                    const markers = [];
 
                     data.table.rows.forEach(row => {
                         const timestamp = row.c[0]?.v;
                         const username = row.c[1]?.v;
-                        const community = row.c[2]?.v || 'Unknown';
+                        const community = row.c[2]?.v;
                         const lat = row.c[3]?.v;
                         const lng = row.c[4]?.v;
                         const photoUrl = row.c[5]?.v;
 
                         if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
                             hasValidMarkers = true;
-                            const position = { lat, lng };
 
-                            // Create custom marker
-                            const marker = new google.maps.marker.AdvancedMarkerElement({
-                                position,
-                                map,
-                                content: createCustomMarker(community),
-                                title: community
+                            const marker = new google.maps.Marker({
+                                position: { lat, lng },
+                                map: map,
+                                title: community || 'Unknown Location',
+                                label: {
+                                    text: community || 'Unknown',
+                                    className: 'marker-label',
+                                    color: 'black'
+                                }
                             });
 
                             const formattedDate = formatDate(timestamp);
                             const infoContent = `
                                 <div class="info-window">
-                                    <h3>${community}</h3>
-                                    <p><strong>Posted by:</strong> ${username || 'Anonymous'}</p>
-                                    <p><strong>Date:</strong> ${formattedDate}</p>
+                                    <h3>${community || 'Unknown Location'}</h3>
+                                    <p>Posted by: ${username || 'Anonymous'}</p>
+                                    <p>Date: ${formattedDate}</p>
                                     ${photoUrl ? `
                                         <img src="${photoUrl}" alt="Location Photo" />
                                         <p><a href="${photoUrl}" target="_blank">View Full Size</a></p>
@@ -141,38 +99,28 @@
                             `;
 
                             const infowindow = new google.maps.InfoWindow({
-                                content: infoContent,
-                                pixelOffset: new google.maps.Size(0, -30)
+                                content: infoContent
                             });
 
                             marker.addListener('click', () => {
-                                markers.forEach(m => m.infowindow?.close());
                                 infowindow.open(map, marker);
                             });
 
-                            marker.infowindow = infowindow;
-                            markers.push(marker);
-                            bounds.extend(position);
+                            bounds.extend({ lat, lng });
                         }
                     });
 
                     if (hasValidMarkers) {
                         map.fitBounds(bounds);
-                        
-                        // Adjust zoom if too close
-                        google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-                            if (map.getZoom() > 16) map.setZoom(16);
-                        });
                     }
                 })
                 .catch(error => {
                     console.error('Error loading map data:', error);
-                    alert('Error loading map data. Please try refreshing the page.');
                 });
         }
     </script>
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ&callback=initMap&v=beta">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ&callback=initMap">
     </script>
 </body>
 </html>
