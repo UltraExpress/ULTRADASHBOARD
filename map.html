@@ -53,61 +53,77 @@
             fetchLocations(map);
         }
         
-        // Fetch location data from Google Sheet
+      
+        
         async function fetchLocations(map) {
-            try {
-                const response = await fetch(SHEET_URL, {
-                    method: 'GET',
-                    mode: 'no-cors',  // Add this to match your photo upload form
-                });
-                
-                // Since no-cors mode will make the response opaque, let's try this approach
-                const text = await response.text();
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    console.log('Parsing response:', text);
-                    throw new Error('Could not parse response');
-                }
-                
-                const markers = data.map(location => {
-                    const marker = new google.maps.Marker({
-                        position: {
-                            lat: parseFloat(location.latitude),
-                            lng: parseFloat(location.longitude)
-                        },
-                        title: location.community
-                    });
-                    
-                    // Create info window content
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: createInfoWindowContent(location)
-                    });
-                    
-                    // Add click listener
-                    marker.addListener('click', () => {
-                        infoWindow.open(map, marker);
-                    });
-                    
-                    return marker;
-                });
-                
-                // Add marker clustering
-                new MarkerClusterer(map, markers, {
-                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
-                });
-                
-                // Center map on markers
-                const bounds = new google.maps.LatLngBounds();
-                markers.forEach(marker => bounds.extend(marker.getPosition()));
-                map.fitBounds(bounds);
-                
-            } catch (error) {
-                console.error('Error fetching location data:', error);
-                alert('Error loading location data. Please try again later.');
+    try {
+        const response = await fetch(SHEET_URL, {
+            method: 'GET',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        // Log the response for debugging
+        console.log('Response received:', response);
+
+        // Add some test markers while we debug
+        const testData = [
+            {
+                latitude: 6.6745,
+                longitude: -1.5716,
+                community: 'Test Location',
+                username: 'Test User',
+                timestamp: new Date(),
+                photoUrl: '/api/placeholder/400/320'
             }
-        }
+        ];
+        
+        const markers = testData.map(location => {
+            const marker = new google.maps.Marker({
+                position: {
+                    lat: parseFloat(location.latitude),
+                    lng: parseFloat(location.longitude)
+                },
+                title: location.community,
+                map: map
+            });
+            
+            const infoWindow = new google.maps.InfoWindow({
+                content: createInfoWindowContent(location)
+            });
+            
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+            
+            return marker;
+        });
+        
+        // Add marker clustering
+        new MarkerClusterer(map, markers, {
+            imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
+        });
+        
+        // Center map on Ghana
+        map.setCenter({ lat: 7.9465, lng: -1.0232 });
+        map.setZoom(7);
+        
+    } catch (error) {
+        console.error('Error fetching location data:', error);
+        alert('Error loading location data. Please try again later.');
+    }
+}
+
+
+
+
+
+
+
+
+        
         
         // Create info window content
         function createInfoWindowContent(location) {
