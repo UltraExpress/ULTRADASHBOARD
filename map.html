@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Photo Locations Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <title>Flyer Locations Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ"></script>
     <style>
         #map { height: 100vh; width: 100%; }
         body { margin: 0; }
         .info-window { max-width: 200px; }
-        #loading { 
+        #loading {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -16,75 +16,53 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: none;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
+    <div id="loading">Loading map data...</div>
     <div id="map"></div>
-    <div id="loading">Loading data...</div>
     <script>
-        const SHEET_ID = '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8';
-        const SHEET_NAME = 'Sheet1';
-        const SHEET_RANGE = 'A:F'; // Adjust based on your columns
-
-        async function fetchSheetData() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
-            
-            try {
-                // Using Google Sheets API v4
-                const response = await fetch(
-                    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!${SHEET_RANGE}?key=YOUR_SHEETS_API_KEY`
-                );
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-
-                const data = await response.json();
-                return data.values.slice(1).map(row => ({
-                    timestamp: row[0],
-                    username: row[1],
-                    community: row[2],
-                    latitude: row[3],
-                    longitude: row[4],
-                    photoUrl: row[5]
-                }));
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                return [];
-            } finally {
-                loading.style.display = 'none';
-            }
-        }
-
         async function initMap() {
+            const loading = document.getElementById('loading');
             const map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
                 center: { lat: 33.93864, lng: -84.4953 }
             });
 
-            const data = await fetchSheetData();
-            
-            data.forEach(row => {
-                if (row.latitude && row.longitude) {
-                    const lat = parseFloat(row.latitude);
-                    const lng = parseFloat(row.longitude);
+            try {
+                // Fetch data from public Google Sheet
+                const SHEET_ID = '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8';
+                const response = await fetch(
+                    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sheet data');
+                }
+
+                const text = await response.text();
+                // Parse the JSON-like response
+                const data = JSON.parse(text.substring(47).slice(0, -2));
+                
+                // Process and display markers
+                data.table.rows.forEach(row => {
+                    const [timestamp, username, community, latitude, longitude, photoUrl] = row.c.map(cell => cell?.v);
                     
-                    if (!isNaN(lat) && !isNaN(lng)) {
+                    if (latitude && longitude) {
                         const marker = new google.maps.Marker({
-                            position: { lat, lng },
+                            position: { lat: latitude, lng: longitude },
                             map: map,
-                            title: row.community
+                            title: community || 'Unknown Location'
                         });
 
                         const infoContent = `
                             <div class="info-window">
-                                <h3>${row.community}</h3>
-                                <p>User: ${row.username}</p>
-                                <p>Time: ${row.timestamp}</p>
-                                ${row.photoUrl ? `<p><a href="${row.photoUrl}" target="_blank">View Photo</a></p>` : ''}
+                                <h3>${community || 'Unknown Location'}</h3>
+                                <p>User: ${username || 'Anonymous'}</p>
+                                <p>Time: ${timestamp || 'Unknown'}</p>
+                                ${photoUrl ? `<p><a href="${photoUrl}" target="_blank">View Photo</a></p>` : ''}
                             </div>
                         `;
 
@@ -96,22 +74,23 @@
                             infowindow.open(map, marker);
                         });
                     }
-                }
-            });
+                });
 
-            // Adjust map bounds to fit all markers
-            if (data.length > 0) {
+                // Fit map to show all markers
                 const bounds = new google.maps.LatLngBounds();
-                data.forEach(row => {
-                    if (row.latitude && row.longitude) {
-                        const lat = parseFloat(row.latitude);
-                        const lng = parseFloat(row.longitude);
-                        if (!isNaN(lat) && !isNaN(lng)) {
-                            bounds.extend({ lat, lng });
-                        }
+                data.table.rows.forEach(row => {
+                    const latitude = row.c[3]?.v;
+                    const longitude = row.c[4]?.v;
+                    if (latitude && longitude) {
+                        bounds.extend({ lat: latitude, lng: longitude });
                     }
                 });
                 map.fitBounds(bounds);
+            } catch (error) {
+                console.error('Error loading map data:', error);
+                loading.textContent = 'Error loading map data. Please try again later.';
+            } finally {
+                loading.style.display = 'none';
             }
         }
 
