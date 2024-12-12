@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Flyer Locations Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ"></script>
     <style>
         #map { height: 100vh; width: 100%; }
         body { margin: 0; }
@@ -15,17 +14,26 @@
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
-                center: { lat: 33.93864, lng: -84.4953 }
+                center: { lat: 33.93864, lng: -84.4953 },
+                minZoom: 2,
+                maxZoom: 18,
+                restriction: {
+                    latLngBounds: {
+                        north: 85,
+                        south: -85,
+                        west: -180,
+                        east: 180
+                    }
+                }
             });
 
             const SHEET_ID = '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8';
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`)
                 .then(response => response.text())
                 .then(text => {
-                    // Parse the JSON-like response
                     const data = JSON.parse(text.substring(47).slice(0, -2));
-                    
                     const bounds = new google.maps.LatLngBounds();
+                    let hasValidMarkers = false;
 
                     data.table.rows.forEach(row => {
                         const timestamp = row.c[0]?.v;
@@ -35,7 +43,8 @@
                         const lng = row.c[4]?.v;
                         const photoUrl = row.c[5]?.v;
 
-                        if (lat && lng) {
+                        if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                            hasValidMarkers = true;
                             const marker = new google.maps.Marker({
                                 position: { lat, lng },
                                 map: map,
@@ -61,14 +70,17 @@
                         }
                     });
 
-                    map.fitBounds(bounds);
+                    if (hasValidMarkers) {
+                        map.fitBounds(bounds);
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading map data:', error);
                 });
         }
-
-        window.onload = initMap;
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ&callback=initMap">
     </script>
 </body>
 </html>
