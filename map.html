@@ -2,10 +2,11 @@
 <html>
 <head>
     <title>Photo Locations Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ&v=beta"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ"></script>
     <style>
         #map { height: 100vh; width: 100%; }
         body { margin: 0; }
+        .info-window { max-width: 200px; }
     </style>
 </head>
 <body>
@@ -14,43 +15,33 @@
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 7,
-                center: { lat: 7.9465, lng: -1.0232 }, // Ghana
+                center: { lat: 7.9465, lng: -1.0232 }
             });
 
-            // Fetch data from your Google Sheet
             fetch('https://opensheet.elk.sh/1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8/Sheet1')
-                .then(res => res.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Data received:', data); // Debug log
                     data.forEach(row => {
-                        const position = {
-                            lat: parseFloat(row.latitude),
-                            lng: parseFloat(row.longitude)
-                        };
-                        
-                        const marker = new google.maps.marker.AdvancedMarkerElement({
-                            map: map,
-                            position: position,
-                            title: row.community
-                        });
-
-                        const infowindow = new google.maps.InfoWindow({
-                            content: `
-                                <div style="padding: 10px;">
-                                    <h3 style="margin-top: 0;">${row.community}</h3>
-                                    <p>By: ${row.username}</p>
-                                    <img src="${row.photourl}" style="max-width: 200px; width: 100%;">
-                                </div>
-                            `
-                        });
-
-                        marker.addListener('click', () => {
-                            infowindow.open(map, marker);
-                        });
+                        if (row.latitude && row.longitude) {
+                            new google.maps.Marker({
+                                position: {
+                                    lat: parseFloat(row.latitude),
+                                    lng: parseFloat(row.longitude)
+                                },
+                                map: map,
+                                title: row.community
+                            });
+                        }
                     });
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error loading map data. Please try again later.');
                 });
         }
 
