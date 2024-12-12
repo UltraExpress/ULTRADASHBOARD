@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Photo Locations Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ&v=beta"></script>
     <style>
         #map { height: 100vh; width: 100%; }
         body { margin: 0; }
@@ -22,20 +22,24 @@
                 .then(res => res.json())
                 .then(data => {
                     data.forEach(row => {
-                        const marker = new google.maps.Marker({
-                            position: {
-                                lat: parseFloat(row.latitude),
-                                lng: parseFloat(row.longitude)
-                            },
+                        const position = {
+                            lat: parseFloat(row.latitude),
+                            lng: parseFloat(row.longitude)
+                        };
+                        
+                        const marker = new google.maps.marker.AdvancedMarkerElement({
                             map: map,
+                            position: position,
                             title: row.community
                         });
 
                         const infowindow = new google.maps.InfoWindow({
                             content: `
-                                <h3>${row.community}</h3>
-                                <p>By: ${row.username}</p>
-                                <img src="${row.photourl}" width="200">
+                                <div style="padding: 10px;">
+                                    <h3 style="margin-top: 0;">${row.community}</h3>
+                                    <p>By: ${row.username}</p>
+                                    <img src="${row.photourl}" style="max-width: 200px; width: 100%;">
+                                </div>
                             `
                         });
 
@@ -43,6 +47,10 @@
                             infowindow.open(map, marker);
                         });
                     });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading map data. Please try again later.');
                 });
         }
 
