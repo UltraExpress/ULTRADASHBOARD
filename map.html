@@ -10,6 +10,7 @@
             max-width: 100%; 
             height: auto; 
             margin-top: 10px;
+            border-radius: 4px;
         }
         .marker-label {
             background-color: white;
@@ -55,6 +56,8 @@
                 }
             });
 
+            let currentInfoWindow = null;
+
             const SHEET_ID = '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8';
             fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`)
                 .then(response => response.text())
@@ -69,7 +72,15 @@
                         const community = row.c[2]?.v;
                         const lat = row.c[3]?.v;
                         const lng = row.c[4]?.v;
-                        const photoUrl = row.c[5]?.v;
+                        let photoUrl = row.c[5]?.v;
+
+                        // Convert Google Drive view links to direct image links
+                        if (photoUrl && photoUrl.includes('drive.google.com')) {
+                            const fileId = photoUrl.match(/\/d\/(.*?)\/view/)?.[1];
+                            if (fileId) {
+                                photoUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                            }
+                        }
 
                         if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
                             hasValidMarkers = true;
@@ -103,7 +114,18 @@
                             });
 
                             marker.addListener('click', () => {
+                                if (currentInfoWindow) {
+                                    currentInfoWindow.close();
+                                }
                                 infowindow.open(map, marker);
+                                currentInfoWindow = infowindow;
+                            });
+
+                            // Close info window when clicking elsewhere on the map
+                            map.addListener('click', () => {
+                                if (currentInfoWindow) {
+                                    currentInfoWindow.close();
+                                }
                             });
 
                             bounds.extend({ lat, lng });
