@@ -240,54 +240,43 @@ async function uploadData() {
     }
 
     document.querySelector('.loading').style.display = 'block';
+    document.querySelector('.loading').textContent = 'Compressing image...';
     
-    // Compress image before upload
-    const compressedPhoto = await compressImage(photoData);
-    console.log("Original size:", photoData.length, "Compressed size:", compressedPhoto.length);
+    try {
+        // Compress image before upload
+        const compressedPhoto = await compressImage(photoData);
+        console.log("Original size:", Math.round(photoData.length/1024), "KB");
+        console.log("Compressed size:", Math.round(compressedPhoto.length/1024), "KB");
 
-    // Create form data
-    const formData = new URLSearchParams();
-    formData.append('username', username);
-    formData.append('community', community);
-    formData.append('latitude', currentPosition.latitude);
-    formData.append('longitude', currentPosition.longitude);
-    formData.append('photo', compressedPhoto);
+        document.querySelector('.loading').textContent = 'Uploading...';
 
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', SCRIPT_URL, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('community', community);
+        formData.append('latitude', currentPosition.latitude);
+        formData.append('longitude', currentPosition.longitude);
+        formData.append('photo', compressedPhoto);
 
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const percentComplete = (event.loaded / event.total) * 100;
-                document.querySelector('.loading').textContent = 
-                    `Uploading: ${percentComplete.toFixed(1)}%`;
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                document.getElementById('preview').style.display = 'none';
-                document.getElementById('photoInput').value = '';
-                photoData = null;
-                alert('Photo uploaded successfully!');
-                resolve();
-            } else {
-                reject(new Error('Upload failed'));
-            }
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // This was key in our working version
+            body: formData
+        });
+        
+        document.getElementById('preview').style.display = 'none';
+        document.getElementById('photoInput').value = '';
+        photoData = null;
+        document.querySelector('.loading').textContent = 'Upload complete!';
+        setTimeout(() => {
             document.querySelector('.loading').style.display = 'none';
             document.querySelector('.loading').textContent = 'Uploading...';
-        };
+        }, 2000);
 
-        xhr.onerror = () => {
-            reject(new Error('Network error'));
-            document.querySelector('.loading').style.display = 'none';
-            document.querySelector('.loading').textContent = 'Uploading...';
-        };
-
-        xhr.send(formData);
-    });
+    } catch (error) {
+        console.error("Upload error:", error);
+        alert('Error uploading: ' + error.toString());
+        document.querySelector('.loading').style.display = 'none';
+    }
 }
 
 
