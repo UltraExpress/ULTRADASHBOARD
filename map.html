@@ -40,11 +40,29 @@
             }
         }
 
+        function getGoogleDriveImageUrl(url) {
+            if (!url) return '';
+            // Handle old-style Google Drive URLs
+            if (url.includes('drive.google.com/file/d/')) {
+                const fileId = url.match(/\/d\/(.*?)\//)?.[1];
+                if (fileId) return `https://drive.google.com/uc?id=${fileId}`;
+            }
+            // Handle new-style Google Drive URLs
+            if (url.includes('drive.google.com/uc?export=view&id=')) {
+                return url;
+            }
+            // Handle direct export URLs
+            if (url.includes('drive.google.com/uc?')) {
+                return url;
+            }
+            return url;
+        }
+
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
                 center: { lat: 33.93864, lng: -84.4953 },
-                minZoom: 2,
+                minZoom: 3,  // Prevent excessive zoom out
                 maxZoom: 18,
                 restriction: {
                     latLngBounds: {
@@ -72,15 +90,7 @@
                         const community = row.c[2]?.v;
                         const lat = row.c[3]?.v;
                         const lng = row.c[4]?.v;
-                        let photoUrl = row.c[5]?.v;
-
-                        // Convert Google Drive view links to direct image links
-                        if (photoUrl && photoUrl.includes('drive.google.com')) {
-                            const fileId = photoUrl.match(/\/d\/(.*?)\/view/)?.[1];
-                            if (fileId) {
-                                photoUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-                            }
-                        }
+                        const photoUrl = getGoogleDriveImageUrl(row.c[5]?.v);
 
                         if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
                             hasValidMarkers = true;
@@ -103,7 +113,7 @@
                                     <p>Posted by: ${username || 'Anonymous'}</p>
                                     <p>Date: ${formattedDate}</p>
                                     ${photoUrl ? `
-                                        <img src="${photoUrl}" alt="Location Photo" />
+                                        <img src="${photoUrl}" alt="Location Photo" onerror="this.style.display='none'" />
                                         <p><a href="${photoUrl}" target="_blank">View Full Size</a></p>
                                     ` : ''}
                                 </div>
@@ -121,19 +131,16 @@
                                 currentInfoWindow = infowindow;
                             });
 
-                            // Close info window when clicking elsewhere on the map
-                            map.addListener('click', () => {
-                                if (currentInfoWindow) {
-                                    currentInfoWindow.close();
-                                }
-                            });
-
                             bounds.extend({ lat, lng });
                         }
                     });
 
                     if (hasValidMarkers) {
                         map.fitBounds(bounds);
+                        // Prevent too much zoom for single markers
+                        google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+                            if (map.getZoom() > 15) map.setZoom(15);
+                        });
                     }
                 })
                 .catch(error => {
