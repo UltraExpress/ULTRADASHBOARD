@@ -59,6 +59,9 @@
             text-align: center;
             margin: 10px 0;
         }
+        #photoInput {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -72,7 +75,8 @@
             <label for="community">Community:</label>
             <input type="text" id="community" required>
         </div>
-        <button class="camera-button" onclick="startCamera()">Take Photo</button>
+        <input type="file" id="photoInput" accept="image/*" capture="environment">
+        <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
         <img id="preview" alt="Preview">
         <div class="loading">Uploading...</div>
     </div>
@@ -90,35 +94,20 @@
             };
         });
 
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                const video = document.createElement('video');
-                video.srcObject = stream;
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
                 
-                video.onloadedmetadata = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    // Take the photo after 1 second
-                    setTimeout(() => {
-                        canvas.getContext('2d').drawImage(video, 0, 0);
-                        stream.getTracks().forEach(track => track.stop());
-                        
-                        photoData = canvas.toDataURL('image/jpeg');
-                        document.getElementById('preview').src = photoData;
-                        document.getElementById('preview').style.display = 'block';
-                        
-                        uploadData();
-                    }, 1000);
+                reader.onload = function(e) {
+                    photoData = e.target.result;
+                    document.getElementById('preview').src = photoData;
+                    document.getElementById('preview').style.display = 'block';
+                    uploadData();
                 };
                 
-                video.play();
-            } catch (error) {
-                alert('Error accessing camera: ' + error);
+                reader.readAsDataURL(e.target.files[0]);
             }
-        }
+        });
 
         async function uploadData() {
             if (!photoData || !currentPosition) {
@@ -154,6 +143,8 @@
                     alert('Photo uploaded successfully!');
                     document.getElementById('preview').style.display = 'none';
                     document.getElementById('community').value = '';
+                    document.getElementById('photoInput').value = '';
+                    photoData = null;
                 } else {
                     throw new Error(result.message);
                 }
