@@ -34,7 +34,7 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-        .camera-button {
+        .camera-button, .change-info-button {
             background: #4285f4;
             color: white;
             padding: 12px 20px;
@@ -45,8 +45,14 @@
             font-size: 16px;
             margin-bottom: 10px;
         }
+        .change-info-button {
+            background: #34a853;
+        }
         .camera-button:hover {
             background: #3367d6;
+        }
+        .change-info-button:hover {
+            background: #2d8745;
         }
         #preview {
             width: 100%;
@@ -65,29 +71,69 @@
         #photoInput {
             display: none;
         }
+        .info-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .form-container {
+            display: none;
+        }
+        .form-container.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Photo Capture</h1>
-        <div class="form-group">
-            <label for="username">Your Name:</label>
-            <input type="text" id="username" required>
+        
+        <!-- Current Info Display -->
+        <div class="info-display" id="currentInfo" style="display: none;">
+            <strong>Current User:</strong> <span id="displayUsername"></span><br>
+            <strong>Community:</strong> <span id="displayCommunity"></span>
+            <button class="change-info-button" onclick="showForm()">Change Info</button>
         </div>
-        <div class="form-group">
-            <label for="community">Community:</label>
-            <input type="text" id="community" required>
+
+        <!-- Form Container -->
+        <div id="formContainer" class="form-container show">
+            <div class="form-group">
+                <label for="username">Your Name:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="community">Community:</label>
+                <input type="text" id="community" required>
+            </div>
+            <button class="camera-button" onclick="saveUserInfo()">Start Taking Photos</button>
         </div>
-        <input type="file" id="photoInput" accept="image/*" capture="environment">
-        <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
-        <img id="preview" alt="Preview">
-        <div class="loading">Uploading photo...</div>
+
+        <!-- Photo Capture Section -->
+        <div id="photoSection" style="display: none;">
+            <input type="file" id="photoInput" accept="image/*" capture="environment">
+            <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
+            <img id="preview" alt="Preview">
+            <div class="loading">Uploading photo...</div>
+        </div>
     </div>
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
         let photoData = null;
         let currentPosition = null;
+
+        // Check for saved user info on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUsername = localStorage.getItem('username');
+            const savedCommunity = localStorage.getItem('community');
+            
+            if (savedUsername && savedCommunity) {
+                document.getElementById('username').value = savedUsername;
+                document.getElementById('community').value = savedCommunity;
+                showPhotoSection();
+            }
+        });
 
         // Get location permission early
         navigator.geolocation.getCurrentPosition(pos => {
@@ -100,6 +146,38 @@
             console.error("Location error:", err);
             alert("Please enable location services to use this app");
         });
+
+        function saveUserInfo() {
+            const username = document.getElementById('username').value;
+            const community = document.getElementById('community').value;
+
+            if (!username || !community) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            localStorage.setItem('username', username);
+            localStorage.setItem('community', community);
+            showPhotoSection();
+        }
+
+        function showPhotoSection() {
+            const username = localStorage.getItem('username');
+            const community = localStorage.getItem('community');
+            
+            document.getElementById('displayUsername').textContent = username;
+            document.getElementById('displayCommunity').textContent = community;
+            
+            document.getElementById('formContainer').style.display = 'none';
+            document.getElementById('currentInfo').style.display = 'block';
+            document.getElementById('photoSection').style.display = 'block';
+        }
+
+        function showForm() {
+            document.getElementById('formContainer').style.display = 'block';
+            document.getElementById('currentInfo').style.display = 'none';
+            document.getElementById('photoSection').style.display = 'none';
+        }
 
         document.getElementById('photoInput').addEventListener('change', function(e) {
             if (e.target.files && e.target.files[0]) {
@@ -122,11 +200,12 @@
                 return;
             }
 
-            const username = document.getElementById('username').value;
-            const community = document.getElementById('community').value;
+            const username = localStorage.getItem('username');
+            const community = localStorage.getItem('community');
 
             if (!username || !community) {
-                alert('Please fill in all fields');
+                alert('Please fill in your information first');
+                showForm();
                 return;
             }
 
@@ -150,7 +229,6 @@
                 });
                 
                 document.getElementById('preview').style.display = 'none';
-                document.getElementById('community').value = '';
                 document.getElementById('photoInput').value = '';
                 photoData = null;
                 alert('Photo uploaded successfully!');
