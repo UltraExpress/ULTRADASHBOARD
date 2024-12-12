@@ -1,1 +1,120 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Location Map</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markerclustererplus/2.1.4/markerclusterer.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .info-window {
+            padding: 10px;
+            max-width: 300px;
+        }
+        .info-window img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+        }
+        .info-window h3 {
+            margin: 0 0 10px 0;
+        }
+        .info-window p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <script>
+        // Configuration
+        const SHEET_URL = 'YOUR_GOOGLE_SHEET_URL';
+        
+        // Initialize the map
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 4,
+                center: { lat: 0, lng: 0 },
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+            
+            fetchLocations(map);
+        }
+        
+        // Fetch location data from Google Sheet
+        async function fetchLocations(map) {
+            try {
+                const response = await fetch(SHEET_URL);
+                const data = await response.json();
+                
+                const markers = data.map(location => {
+                    const marker = new google.maps.Marker({
+                        position: {
+                            lat: parseFloat(location.latitude),
+                            lng: parseFloat(location.longitude)
+                        },
+                        title: location.community
+                    });
+                    
+                    // Create info window content
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: createInfoWindowContent(location)
+                    });
+                    
+                    // Add click listener
+                    marker.addListener('click', () => {
+                        infoWindow.open(map, marker);
+                    });
+                    
+                    return marker;
+                });
+                
+                // Add marker clustering
+                new MarkerClusterer(map, markers, {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
+                });
+                
+                // Center map on markers
+                const bounds = new google.maps.LatLngBounds();
+                markers.forEach(marker => bounds.extend(marker.getPosition()));
+                map.fitBounds(bounds);
+                
+            } catch (error) {
+                console.error('Error fetching location data:', error);
+                alert('Error loading location data. Please try again later.');
+            }
+        }
+        
+        // Create info window content
+        function createInfoWindowContent(location) {
+            return `
+                <div class="info-window">
+                    <h3>${location.community}</h3>
+                    <p><strong>Photographer:</strong> ${location.username}</p>
+                    <p><strong>Date:</strong> ${new Date(location.timestamp).toLocaleDateString()}</p>
+                    <p><strong>Photos at this location:</strong> ${location.photoCount || 1}</p>
+                    <a href="${location.photoUrl}" target="_blank">
+                        <img src="${location.photoUrl}" alt="Location photo">
+                    </a>
+                </div>
+            `;
+        }
+        
+        // Initialize the map when the page loads
+        window.onload = initMap;
+    </script>
+</body>
+</html>
