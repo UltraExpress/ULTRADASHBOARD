@@ -58,26 +58,9 @@
             display: none;
             text-align: center;
             margin: 10px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
         }
         #photoInput {
             display: none;
-        }
-        .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 10px;
-            display: none;
-        }
-        .status.error {
-            background: #fee;
-            color: #c00;
-        }
-        .status.success {
-            background: #efe;
-            color: #0c0;
         }
     </style>
 </head>
@@ -95,50 +78,31 @@
         <input type="file" id="photoInput" accept="image/*" capture="environment">
         <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
         <img id="preview" alt="Preview">
-        <div class="loading">Processing... please wait</div>
-        <div class="status"></div>
+        <div class="loading">Uploading...</div>
     </div>
 
     <script>
-       const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKqLK-dnDcFpXWNUbUIzA2kde5-9fvC1FHtP0KGBpRmxu-8DhlkVVmwTAd3j8rsq8Q/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKgLK-dnDcFpXWNUbUIzA2kde5-9fvCIFHtPNKGRpRmxu-8Dh1kVWmwTAd3j8rsg8Q/exec';
         let photoData = null;
         let currentPosition = null;
 
-        function showStatus(message, isError = false) {
-            const statusDiv = document.querySelector('.status');
-            statusDiv.textContent = message;
-            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
-            statusDiv.style.display = 'block';
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 5000);
-        }
-
         // Get location permission early
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                currentPosition = {
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude
-                };
-                console.log("Location acquired:", currentPosition);
-            },
-            err => {
-                console.error("Location error:", err);
-                showStatus('Please enable location services', true);
-            }
-        );
+        navigator.geolocation.getCurrentPosition(pos => {
+            currentPosition = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude
+            };
+            console.log("Location acquired:", currentPosition);
+        });
 
         document.getElementById('photoInput').addEventListener('change', function(e) {
             if (e.target.files && e.target.files[0]) {
-                console.log("File selected");
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     photoData = e.target.result;
                     document.getElementById('preview').src = photoData;
                     document.getElementById('preview').style.display = 'block';
-                    console.log("Photo loaded");
                     uploadData();
                 };
                 
@@ -148,7 +112,7 @@
 
         async function uploadData() {
             if (!photoData || !currentPosition) {
-                showStatus('Please ensure camera and location access are enabled', true);
+                alert('Please ensure camera and location access are enabled');
                 return;
             }
 
@@ -156,44 +120,35 @@
             const community = document.getElementById('community').value;
 
             if (!username || !community) {
-                showStatus('Please fill in all fields', true);
+                alert('Please fill in all fields');
                 return;
             }
 
             document.querySelector('.loading').style.display = 'block';
-            console.log("Starting upload");
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('community', community);
+            formData.append('latitude', currentPosition.latitude);
+            formData.append('longitude', currentPosition.longitude);
+            formData.append('photo', photoData);
 
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username,
-                        community,
-                        latitude: currentPosition.latitude,
-                        longitude: currentPosition.longitude,
-                        photo: photoData
-                    })
+                    mode: 'no-cors',
+                    body: formData
                 });
-
-                console.log("Response received");
-                const result = await response.json();
                 
-                if (result.status === 'success') {
-                    showStatus('Photo uploaded successfully!');
-                    document.getElementById('preview').style.display = 'none';
-                    document.getElementById('community').value = '';
-                    document.getElementById('photoInput').value = '';
-                    photoData = null;
-                } else {
-                    throw new Error(result.message);
-                }
+                document.getElementById('preview').style.display = 'none';
+                document.getElementById('community').value = '';
+                document.getElementById('photoInput').value = '';
+                photoData = null;
+                alert('Upload successful!');
+                
             } catch (error) {
                 console.error('Upload error:', error);
-                showStatus('Error: ' + error.toString(), true);
+                alert('Error uploading: ' + error.toString());
             } finally {
                 document.querySelector('.loading').style.display = 'none';
             }
