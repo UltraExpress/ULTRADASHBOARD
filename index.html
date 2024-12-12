@@ -3,135 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Express QC Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <title>Ultra Express Photo Capture</title>
     <style>
-        @keyframes shimmer {
-            0% {
-                background-position: -200% center;
-            }
-            100% {
-                background-position: 200% center;
-            }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f2f5;
         }
-        .location-text {
-            background: linear-gradient(
-                90deg,
-                rgba(96, 165, 250, 0.5) 0%,
-                rgba(96, 165, 250, 1) 25%,
-                rgba(96, 165, 250, 1) 50%,
-                rgba(96, 165, 250, 0.5) 75%,
-                rgba(96, 165, 250, 0.5) 100%
-            );
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .location-text-purple {
-            background: linear-gradient(
-                90deg,
-                rgba(147, 51, 234, 0.5) 0%,
-                rgba(147, 51, 234, 1) 25%,
-                rgba(147, 51, 234, 1) 50%,
-                rgba(147, 51, 234, 0.5) 75%,
-                rgba(147, 51, 234, 0.5) 100%
-            );
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
+        .form-group {
+            margin-bottom: 15px;
         }
-        .arrow-icon {
-            stroke-width: 1.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .camera-button {
+            background: #4285f4;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .camera-button:hover {
+            background: #3367d6;
+        }
+        #preview {
+            width: 100%;
+            max-width: 300px;
+            display: none;
+            margin: 10px 0;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100">
-    <audio id="backgroundAudio" loop autoplay>
-        <source src="carwash BG sound.mp3" type="audio/mpeg">
-    </audio>
+<body>
+    <div class="container">
+        <h1>Photo Capture</h1>
+        <div class="form-group">
+            <label for="username">Your Name:</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="form-group">
+            <label for="community">Community:</label>
+            <input type="text" id="community" required>
+        </div>
+        <button class="camera-button" onclick="startCamera()">Take Photo</button>
+        <img id="preview" alt="Preview">
+        <div class="loading">Uploading...</div>
+    </div>
 
     <script>
-        // Try to start audio as soon as possible
-        document.addEventListener('DOMContentLoaded', () => {
-            const audio = document.getElementById('backgroundAudio');
-            
-            // Set volume to a comfortable background level
-            audio.volume = 0.5;
-            
-            // Try to play on page load
-            audio.play().catch(() => {
-                // Add click handler if autoplay fails
-                document.addEventListener('click', () => {
-                    audio.play();
-                }, { once: true });
-            });
-        });
-    </script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0krrcwG6k4DvK3NgV0XGNA2s9p24Ifof-fIJHj36D6-sJ7JyyQP06XFDdzi-9DEKQ-w/exec';
+        let photoData = null;
+        let currentPosition = null;
 
-    <div class="container mx-auto p-6 max-w-4xl">
-        <!-- Original content remains unchanged -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-400 to-purple-600 mb-2">
-                ULTRA EXPRESS
-            </h1>
-            <div class="flex flex-col items-center">
-                <h2 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mt-4">
-                    QC DASHBOARD
-                </h2>
-                <div class="h-1 w-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded mt-2"></div>
-                <p class="text-gray-400 mt-2">Quality Control Management System</p>
-            </div>
-        </div>
-        
-        <div class="grid md:grid-cols-2 gap-6">
-            <a href="/QC/speedie.html" class="group">
-                <div class="p-6 bg-gray-800 rounded-xl border border-gray-700 hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-2xl font-bold location-text text-transparent">SPEEDIE</h2>
-                        <svg class="w-8 h-8 text-blue-400 group-hover:translate-x-2 transition-transform arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M5 12h14m0 0l-7-7m7 7l-7 7"/>
-                        </svg>
-                    </div>
-                </div>
-            </a>
-            
-            <a href="/QC/riverside.html" class="group">
-                <div class="p-6 bg-gray-800 rounded-xl border border-gray-700 hover:border-purple-500 transition-all duration-300 transform hover:-translate-y-1">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-2xl font-bold location-text-purple text-transparent">RIVERSIDE</h2>
-                        <svg class="w-8 h-8 text-purple-400 group-hover:translate-x-2 transition-transform arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M5 12h14m0 0l-7-7m7 7l-7 7"/>
-                        </svg>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <div class="mt-12 p-6 bg-gray-800 rounded-xl border border-gray-700">
-            <h3 class="text-xl font-bold mb-4 text-gray-100">Instructions</h3>
-            <div class="space-y-3 text-gray-300">
-                <div class="flex items-start">
-                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm mr-3">1</span>
-                    <p>Select target location</p>
-                </div>
-                <div class="flex items-start">
-                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm mr-3">2</span>
-                    <p>Execute inspections and ratings on sites</p>
-                </div>
-                <div class="flex items-start">
-                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm mr-3">3</span>
-                    <p>Document observations and upload notes and images</p>
-                </div>
-                <div class="flex items-start">
-                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm mr-3">4</span>
-                    <p>Generate final PDF site report</p>
-                </div>
-            </div>
-        </div>
-    </div>
+        // Get location permission early
+        navigator.geolocation.getCurrentPosition(pos => {
+            currentPosition = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude
+            };
+        });
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    // Take the photo after 1 second
+                    setTimeout(() => {
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        photoData = canvas.toDataURL('image/jpeg');
+                        document.getElementById('preview').src = photoData;
+                        document.getElementById('preview').style.display = 'block';
+                        
+                        uploadData();
+                    }, 1000);
+                };
+                
+                video.play();
+            } catch (error) {
+                alert('Error accessing camera: ' + error);
+            }
+        }
+
+        async function uploadData() {
+            if (!photoData || !currentPosition) {
+                alert('Please ensure camera and location access are enabled');
+                return;
+            }
+
+            const username = document.getElementById('username').value;
+            const community = document.getElementById('community').value;
+
+            if (!username || !community) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            document.querySelector('.loading').style.display = 'block';
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username,
+                        community,
+                        latitude: currentPosition.latitude,
+                        longitude: currentPosition.longitude,
+                        photo: photoData
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert('Photo uploaded successfully!');
+                    document.getElementById('preview').style.display = 'none';
+                    document.getElementById('community').value = '';
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert('Error uploading photo: ' + error);
+            } finally {
+                document.querySelector('.loading').style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
