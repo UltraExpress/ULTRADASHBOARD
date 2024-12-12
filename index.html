@@ -58,9 +58,26 @@
             display: none;
             text-align: center;
             margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
         }
         #photoInput {
             display: none;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        .status.error {
+            background: #fee;
+            color: #c00;
+        }
+        .status.success {
+            background: #efe;
+            color: #0c0;
         }
     </style>
 </head>
@@ -78,7 +95,8 @@
         <input type="file" id="photoInput" accept="image/*" capture="environment">
         <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
         <img id="preview" alt="Preview">
-        <div class="loading">Uploading...</div>
+        <div class="loading">Processing... please wait</div>
+        <div class="status"></div>
     </div>
 
     <script>
@@ -86,22 +104,41 @@
         let photoData = null;
         let currentPosition = null;
 
+        function showStatus(message, isError = false) {
+            const statusDiv = document.querySelector('.status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
         // Get location permission early
-        navigator.geolocation.getCurrentPosition(pos => {
-            currentPosition = {
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude
-            };
-        });
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                currentPosition = {
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                };
+                console.log("Location acquired:", currentPosition);
+            },
+            err => {
+                console.error("Location error:", err);
+                showStatus('Please enable location services', true);
+            }
+        );
 
         document.getElementById('photoInput').addEventListener('change', function(e) {
             if (e.target.files && e.target.files[0]) {
+                console.log("File selected");
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     photoData = e.target.result;
                     document.getElementById('preview').src = photoData;
                     document.getElementById('preview').style.display = 'block';
+                    console.log("Photo loaded");
                     uploadData();
                 };
                 
@@ -111,7 +148,7 @@
 
         async function uploadData() {
             if (!photoData || !currentPosition) {
-                alert('Please ensure camera and location access are enabled');
+                showStatus('Please ensure camera and location access are enabled', true);
                 return;
             }
 
@@ -119,15 +156,20 @@
             const community = document.getElementById('community').value;
 
             if (!username || !community) {
-                alert('Please fill in all fields');
+                showStatus('Please fill in all fields', true);
                 return;
             }
 
             document.querySelector('.loading').style.display = 'block';
+            console.log("Starting upload");
 
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         username,
                         community,
@@ -137,10 +179,11 @@
                     })
                 });
 
+                console.log("Response received");
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    alert('Photo uploaded successfully!');
+                    showStatus('Photo uploaded successfully!');
                     document.getElementById('preview').style.display = 'none';
                     document.getElementById('community').value = '';
                     document.getElementById('photoInput').value = '';
@@ -148,10 +191,9 @@
                 } else {
                     throw new Error(result.message);
                 }
-          } catch (error) {
+            } catch (error) {
                 console.error('Upload error:', error);
-                // Show the full error message
-                alert('Error details: ' + (error.response ? await error.response.text() : error.toString()));
+                showStatus('Error: ' + error.toString(), true);
             } finally {
                 document.querySelector('.loading').style.display = 'none';
             }
