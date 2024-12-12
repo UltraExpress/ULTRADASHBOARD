@@ -248,7 +248,8 @@ async function uploadData() {
         console.log("Original size:", Math.round(photoData.length/1024), "KB");
         console.log("Compressed size:", Math.round(compressedPhoto.length/1024), "KB");
 
-        // Create form data
+        document.querySelector('.loading').textContent = 'Uploading...';
+
         const formData = new URLSearchParams();
         formData.append('username', username);
         formData.append('community', community);
@@ -256,26 +257,12 @@ async function uploadData() {
         formData.append('longitude', currentPosition.longitude);
         formData.append('photo', compressedPhoto);
 
-        // Create promise for XMLHttpRequest
-        await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percent = (event.loaded / event.total) * 100;
-                    document.querySelector('.loading').textContent = 
-                        `Uploading: ${percent.toFixed(0)}%`;
-                }
-            };
-
-            xhr.onerror = () => reject(new Error('Upload failed'));
-            xhr.onload = () => resolve();
-
-            xhr.open('POST', SCRIPT_URL);
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            xhr.send(formData.toString());
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // This was key in our working version
+            body: formData
         });
-
+        
         document.getElementById('preview').style.display = 'none';
         document.getElementById('photoInput').value = '';
         photoData = null;
@@ -291,9 +278,6 @@ async function uploadData() {
         document.querySelector('.loading').style.display = 'none';
     }
 }
-
-
-
 
         
 
