@@ -148,8 +148,10 @@
                 } else {
                     throw new Error(result.message);
                 }
-            } catch (error) {
-                alert('Error uploading photo: ' + error);
+          } catch (error) {
+                console.error('Upload error:', error);
+                // Show the full error message
+                alert('Error details: ' + (error.response ? await error.response.text() : error.toString()));
             } finally {
                 document.querySelector('.loading').style.display = 'none';
             }
