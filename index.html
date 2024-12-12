@@ -60,14 +60,22 @@
             display: none;
             margin: 10px 0;
         }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 4px;
-        }
+
+
+
+.loading {
+    display: none;
+    text-align: center;
+    margin: 10px 0;
+    padding: 15px;
+    background: #e3f2fd;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+
+        
         #photoInput {
             display: none;
         }
@@ -194,52 +202,99 @@
             }
         });
 
-        async function uploadData() {
-            if (!photoData || !currentPosition) {
-                alert('Please ensure camera and location access are enabled');
-                return;
+function compressImage(base64, maxWidth = 1024) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.src = base64;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const scale = maxWidth / img.width;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6)); // Compress to 60% quality
+        };
+    });
+}
+
+
+
+
+        
+
+
+async function uploadData() {
+    if (!photoData || !currentPosition) {
+        alert('Please ensure camera and location access are enabled');
+        return;
+    }
+
+    const username = localStorage.getItem('username');
+    const community = localStorage.getItem('community');
+
+    if (!username || !community) {
+        alert('Please fill in your information first');
+        showForm();
+        return;
+    }
+
+    document.querySelector('.loading').style.display = 'block';
+    
+    // Compress image before upload
+    const compressedPhoto = await compressImage(photoData);
+    console.log("Original size:", photoData.length, "Compressed size:", compressedPhoto.length);
+
+    // Create form data
+    const formData = new URLSearchParams();
+    formData.append('username', username);
+    formData.append('community', community);
+    formData.append('latitude', currentPosition.latitude);
+    formData.append('longitude', currentPosition.longitude);
+    formData.append('photo', compressedPhoto);
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', SCRIPT_URL, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentComplete = (event.loaded / event.total) * 100;
+                document.querySelector('.loading').textContent = 
+                    `Uploading: ${percentComplete.toFixed(1)}%`;
             }
+        };
 
-            const username = localStorage.getItem('username');
-            const community = localStorage.getItem('community');
-
-            if (!username || !community) {
-                alert('Please fill in your information first');
-                showForm();
-                return;
-            }
-
-            document.querySelector('.loading').style.display = 'block';
-
-            const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('community', community);
-            formData.append('latitude', currentPosition.latitude);
-            formData.append('longitude', currentPosition.longitude);
-            formData.append('photo', photoData);
-
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData
-                });
-                
+        xhr.onload = () => {
+            if (xhr.status === 200) {
                 document.getElementById('preview').style.display = 'none';
                 document.getElementById('photoInput').value = '';
                 photoData = null;
                 alert('Photo uploaded successfully!');
-                
-            } catch (error) {
-                console.error('Upload error:', error);
-                alert('Error uploading: ' + error.toString());
-            } finally {
-                document.querySelector('.loading').style.display = 'none';
+                resolve();
+            } else {
+                reject(new Error('Upload failed'));
             }
-        }
+            document.querySelector('.loading').style.display = 'none';
+            document.querySelector('.loading').textContent = 'Uploading...';
+        };
+
+        xhr.onerror = () => {
+            reject(new Error('Network error'));
+            document.querySelector('.loading').style.display = 'none';
+            document.querySelector('.loading').textContent = 'Uploading...';
+        };
+
+        xhr.send(formData);
+    });
+}
+
+
+
+
+
+        
     </script>
 </body>
 </html>
