@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Express Photo Capture</title>
+    <title>Photo Capture</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,6 +58,9 @@
             display: none;
             text-align: center;
             margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
         }
         #photoInput {
             display: none;
@@ -78,11 +81,11 @@
         <input type="file" id="photoInput" accept="image/*" capture="environment">
         <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
         <img id="preview" alt="Preview">
-        <div class="loading">Uploading...</div>
+        <div class="loading">Uploading photo...</div>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzukFIEzyXPhMVh3lOYv465Qtg55_ps1GNUyPZdfBtVA81bhpcTUtzyCkmycNt25zf_/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
         let photoData = null;
         let currentPosition = null;
 
@@ -93,6 +96,9 @@
                 longitude: pos.coords.longitude
             };
             console.log("Location acquired:", currentPosition);
+        }, err => {
+            console.error("Location error:", err);
+            alert("Please enable location services to use this app");
         });
 
         document.getElementById('photoInput').addEventListener('change', function(e) {
@@ -126,7 +132,7 @@
 
             document.querySelector('.loading').style.display = 'block';
 
-            const formData = new FormData();
+            const formData = new URLSearchParams();
             formData.append('username', username);
             formData.append('community', community);
             formData.append('latitude', currentPosition.latitude);
@@ -137,6 +143,9 @@
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
                     body: formData
                 });
                 
@@ -144,7 +153,7 @@
                 document.getElementById('community').value = '';
                 document.getElementById('photoInput').value = '';
                 photoData = null;
-                alert('Upload successful!');
+                alert('Photo uploaded successfully!');
                 
             } catch (error) {
                 console.error('Upload error:', error);
