@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,8 +38,8 @@
     
     <script>
         // Configuration
-        const SHEET_URL = 'const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyTakp0pKcwdVnZmcCaxpJwUCcHdfN0Z-RnIXwfUIi-JycG4fEQQaeHVspkaCUY1jMlIw/exec';';
-     
+        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyTakp0pKcwdVnZmcCaxpJwUCcHdfN0Z-RnIXwfUIi-JycG4fEQQaeHVspkaCUY1jMlIw/exec';
+        
         // Initialize the map
         function initMap() {
             const map = new google.maps.Map(document.getElementById('map'), {
@@ -57,8 +56,20 @@
         // Fetch location data from Google Sheet
         async function fetchLocations(map) {
             try {
-                const response = await fetch(SHEET_URL);
-                const data = await response.json();
+                const response = await fetch(SHEET_URL, {
+                    method: 'GET',
+                    mode: 'no-cors',  // Add this to match your photo upload form
+                });
+                
+                // Since no-cors mode will make the response opaque, let's try this approach
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    console.log('Parsing response:', text);
+                    throw new Error('Could not parse response');
+                }
                 
                 const markers = data.map(location => {
                     const marker = new google.maps.Marker({
