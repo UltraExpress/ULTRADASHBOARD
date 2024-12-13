@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Stats Panel</title>
+    <style>
+        body { 
+            margin: 0; 
+            font-family: Arial, sans-serif;
+        }
+        #stats-panel {
+            width: 100%;
+            height: 100vh;
+            background: white;
+            padding: 15px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .user-stats {
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .user-stats h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .community-list {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .dates-list {
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="stats-panel">
+        <div class="stats-grid" id="user-stats-container">
+            <!-- Stats will be populated here -->
+        </div>
+    </div>
 
+    <script>
+        function formatDate(dateStr) {
+            if (!dateStr) return 'No date provided';
+            
+            try {
+                const [date, time] = dateStr.split(' ');
+                if (date && time) {
+                    const [month, day, year] = date.split('/');
+                    const [hour, minute] = time.split(':');
+                    
+                    const dateObj = new Date(year, month - 1, day, hour, minute);
+                    
+                    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                    const getOrdinal = (n) => {
+                        const s = ['th', 'st', 'nd', 'rd'];
+                        const v = n % 100;
+                        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+                    };
+                    
+                    return `${months[dateObj.getMonth()]} ${getOrdinal(dateObj.getDate())} ${dateObj.getFullYear()} ${dateObj.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    })}`;
+                }
+            } catch (e) {
+                console.error('Error formatting date:', e);
+            }
+            
+            return dateStr;
+        }
+
+        function updateStatsPanel(userStats) {
+            const container = document.getElementById('user-stats-container');
+            container.innerHTML = '';
+            
+            Object.entries(userStats).forEach(([username, stats]) => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user-stats';
+                
+                const communitiesList = Object.entries(stats.communities)
+                    .map(([community, count]) => `${community} (${count})`)
+                    .join(', ');
+                
+                const datesList = Array.from(stats.dates).join(', ');
+                
+                userDiv.innerHTML = `
+                    <h3>${username}</h3>
+                    <div>Total Contributions: ${stats.totalContributions}</div>
+                    <div class="community-list">Communities: ${communitiesList}</div>
+                    <div class="dates-list">Dates: ${datesList}</div>
+                `;
+                
+                container.appendChild(userDiv);
+            });
+        }
+
+        function fetchAndProcessData() {
+            const SHEET_ID = '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8';
+            fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`)
+                .then(response => response.text())
+                .then(text => {
+                    const data = JSON.parse(text.substring(47).slice(0, -2));
+                    const userStats = calculateUserStats(data);
+                    updateStatsPanel(userStats);
+                    
+                    // Store stats in localStorage for the map page
+                    localStorage.setItem('userStats', JSON.stringify(userStats));
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                });
+        }
+
+        function calculateUserStats(data) {
+            const userStats = {};
+            
+            data.table.rows.forEach(row => {
+                const timestamp = row.c[0]?.v;
+                const username = row.c[1]?.v || 'Anonymous';
+                const community = row.c[2]?.v || 'Unknown Location';
+                const hasValidCoords = row.c[3]?.v && row.c[4]?.v;
+                
+                if (!userStats[username]) {
+                    userStats[username] = {
+                        totalContributions: 0,
+                        communities: {},
+                        dates: new Set()
+                    };
+                }
+                
+                if (hasValidCoords) {
+                    userStats[username].totalContributions++;
+                    if (!userStats[username].communities[community]) {
+                        userStats[username].communities[community] = 0;
+                    }
+                    userStats[username].communities[community]++;
+                    userStats[username].dates.add(formatDate(timestamp));
+                }
+            });
+            
+            return userStats;
+        }
+
+        // Initial load
+        fetchAndProcessData();
+
+        // Refresh data every 5 minutes
+        setInterval(fetchAndProcessData, 300000);
+    </script>
+</body>
+</html>
