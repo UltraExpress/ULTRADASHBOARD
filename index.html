@@ -8,6 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>FLYER DOOR POSTING APP</title>
     <style>
+        /* Previous styles remain the same */
         body {
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             max-width: 600px;
@@ -158,6 +159,12 @@
                 box-shadow: 0 0 0 0 rgba(79, 172, 254, 0);
             }
         }
+        .stats {
+            color: #4facfe;
+            font-size: 14px;
+            margin-top: 8px;
+            opacity: 0.8;
+        }
         strong {
             color: #4facfe;
         }
@@ -171,6 +178,11 @@
             <div class="info-text">
                 <strong>Current User:</strong> <span id="displayUsername"></span><br>
                 <strong>Community:</strong> <span id="displayCommunity"></span>
+                <div class="stats">
+                    <span id="uploadCount">0</span> photos uploaded today
+                    <br>
+                    Session started: <span id="sessionTime"></span>
+                </div>
             </div>
             <button class="change-info-button" onclick="showForm()">Change Info</button>
         </div>
@@ -199,6 +211,8 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
         let photoData = null;
         let currentPosition = null;
+        let uploadCount = 0;
+        let sessionStartTime = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             const savedUsername = localStorage.getItem('username');
@@ -239,9 +253,29 @@
         function showPhotoSection() {
             const username = localStorage.getItem('username');
             const community = localStorage.getItem('community');
+            const currentDate = new Date().toLocaleDateString();
+            
+            // Check if this is a new session or community changed
+            const lastSessionDate = localStorage.getItem('sessionDate');
+            const lastCommunity = localStorage.getItem('lastCommunity');
+            
+            if (lastSessionDate !== currentDate || lastCommunity !== community) {
+                // Reset counter for new day or different community
+                uploadCount = 0;
+                sessionStartTime = new Date();
+                localStorage.setItem('sessionDate', currentDate);
+                localStorage.setItem('lastCommunity', community);
+                localStorage.setItem('sessionStartTime', sessionStartTime.toISOString());
+            } else {
+                // Restore previous counter and session time
+                uploadCount = parseInt(localStorage.getItem('uploadCount') || 0);
+                sessionStartTime = new Date(localStorage.getItem('sessionStartTime'));
+            }
             
             document.getElementById('displayUsername').textContent = username;
             document.getElementById('displayCommunity').textContent = community;
+            document.getElementById('uploadCount').textContent = uploadCount;
+            document.getElementById('sessionTime').textContent = sessionStartTime.toLocaleTimeString();
             
             document.getElementById('formContainer').style.display = 'none';
             document.getElementById('currentInfo').style.display = 'block';
@@ -322,6 +356,11 @@
                     mode: 'no-cors',
                     body: formData
                 });
+                
+                // Update upload count after successful upload
+                uploadCount++;
+                localStorage.setItem('uploadCount', uploadCount);
+                document.getElementById('uploadCount').textContent = uploadCount;
                 
                 document.getElementById('preview').style.display = 'none';
                 document.getElementById('photoInput').value = '';
