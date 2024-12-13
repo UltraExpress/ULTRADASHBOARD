@@ -193,14 +193,14 @@
 
         
 function formatDate(dateStr) {
-    if (!dateStr) return 'No date provided';
+    if (!dateStr) return 'No date';
     
     try {
         // Handle if it's already a Date object string
         if (dateStr.startsWith('Date(')) {
             const params = dateStr.slice(5, -1).split(',').map(Number);
-            const [year, month, day, hour, minute, second] = params;
-            const date = new Date(year, month - 1, day, hour, minute, second || 0);
+            const [year, month, day] = params;
+            const date = new Date(year, month - 1, day);
             
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const monthName = months[date.getMonth()];
@@ -212,46 +212,32 @@ function formatDate(dateStr) {
                 return n + (s[(v - 20) % 10] || s[v] || s[0]);
             };
             
-            const timeStr = date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-            
-            return `${monthName} ${ordinal(dayNum)}, ${date.getFullYear()} at ${timeStr}`;
+            return `${monthName} ${ordinal(dayNum)}`;
         }
         
         // Handle MM/DD/YYYY HH:mm:ss format
-        const [datePart, timePart] = dateStr.split(' ');
-        if (datePart && timePart) {
-            const [month, day, year] = datePart.split('/');
-            const [hour, minute, second] = timePart.split(':');
-            
-            const date = new Date(year, month - 1, day, hour, minute, second);
+        const [datePart] = dateStr.split(' ');
+        if (datePart) {
+            const [month, day] = datePart.split('/');
+            const date = new Date(2024, month - 1, day);
             
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const monthName = months[date.getMonth()];
             
-            const dayNum = date.getDate();
+            const dayNum = parseInt(day);
             const ordinal = (n) => {
                 const s = ['th', 'st', 'nd', 'rd'];
                 const v = n % 100;
                 return n + (s[(v - 20) % 10] || s[v] || s[0]);
             };
             
-            const timeStr = date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-            
-            return `${monthName} ${ordinal(dayNum)}, ${date.getFullYear()} at ${timeStr}`;
+            return `${monthName} ${ordinal(dayNum)}`;
         }
     } catch (e) {
         console.error('Error formatting date:', e);
     }
     
-    return dateStr;
+    return 'No date';
 }
 
 
