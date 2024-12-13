@@ -3,14 +3,19 @@
 <head>
     <title>Flyer Locations Dashboard</title>
     <style>
-        body { 
-            margin: 0; 
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+   body { 
+    margin: 0; 
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#map { 
+    flex: 1;
+    width: 100%;
+}
 
 
 
@@ -28,11 +33,12 @@
     box-sizing: border-box;
     overflow-y: auto;
     border-bottom: 1px solid rgba(0,0,0,0.1);
+    flex-shrink: 0; /* Add this to prevent panel from shrinking */
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 24px;
 }
 
@@ -148,19 +154,6 @@
 
 
 
-
-        
-        .toggle-panel {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
