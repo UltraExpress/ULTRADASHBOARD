@@ -360,7 +360,12 @@ function formatDate(dateStr) {
                             userStats[username].communities[community] = 0;
                         }
                         userStats[username].communities[community]++;
-                      userStats[username].dates.add(formatDate(timestamp));
+                      if (timestamp) {
+    const [month, day, year] = timestamp.split(' ')[0].split('/');
+    const [hour, minute] = timestamp.split(' ')[1].split(':');
+    const dateStr = `${month}/${day}/${year} ${hour}:${minute}`;
+    userStats[username].dates.add(dateStr);
+}
                     }
                 });
 
