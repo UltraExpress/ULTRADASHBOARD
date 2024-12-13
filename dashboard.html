@@ -360,12 +360,15 @@ function formatDate(dateStr) {
                             userStats[username].communities[community] = 0;
                         }
                         userStats[username].communities[community]++;
-                      if (timestamp) {
-    const [month, day, year] = timestamp.split(' ')[0].split('/');
-    const [hour, minute] = timestamp.split(' ')[1].split(':');
-    const dateStr = `${month}/${day}/${year} ${hour}:${minute}`;
-    userStats[username].dates.add(dateStr);
+
+
+
+if (timestamp) {
+    userStats[username].dates.add(timestamp);  // Add the raw timestamp directly
 }
+
+
+                        
                     }
                 });
 
@@ -373,6 +376,13 @@ function formatDate(dateStr) {
             }
         };
 
+
+
+
+
+
+
+        
         // UI Controls
         function toggleStatsPanel() {
             const panel = document.getElementById('stats-panel');
