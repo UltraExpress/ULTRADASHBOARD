@@ -1,1 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flyer Locations Dashboard</title>
+    <style>
+        body { 
+            margin: 0; 
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #stats-panel {
+            height: 250px;
+            background: white;
+            padding: 15px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .user-stats {
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .user-stats h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .community-list {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .dates-list {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        #map { 
+            flex: 1;
+            width: 100%;
+        }
+        
+        .info-window { 
+            max-width: 300px; 
+        }
+        
+        .info-window iframe { 
+            max-width: 100%; 
+            height: 200px; 
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        
+        .marker-label {
+            background-color: white;
+            padding: 2px 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+        }
 
+        .toggle-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-panel" onclick="toggleStatsPanel()">Toggle Stats</button>
+    <div id="stats-panel">
+        <div class="stats-grid" id="user-stats-container">
+            <!-- Stats will be populated here -->
+        </div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        // Shared utilities
+        function formatDate(dateStr) {
+            if (!dateStr) return 'No date provided';
+            
+            try {
+                const [date, time] = dateStr.split(' ');
+                if (date && time) {
+                    const [month, day, year] = date.split('/');
+                    const [hour, minute] = time.split(':');
+                    
+                    const dateObj = new Date(year, month - 1, day, hour, minute);
+                    
+                    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                    const getOrdinal = (n) => {
+                        const s = ['th', 'st', 'nd', 'rd'];
+                        const v = n % 100;
+                        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+                    };
+                    
+                    return `${months[dateObj.getMonth()]} ${getOrdinal(dateObj.getDate())} ${dateObj.getFullYear()} ${dateObj.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    })}`;
+                }
+            } catch (e) {
+                console.error('Error formatting date:', e);
+            }
+            
+            return dateStr;
+        }
+
+        function getGoogleDriveImageUrl(url) {
+            if (!url) return '';
+            return url.replace('/view?usp=drivesdk', '/preview');
+        }
+
+        // Stats Panel Module
+        const StatsPanel = {
+            updatePanel(userStats) {
+                const container = document.getElementById('user-stats-container');
+                container.innerHTML = '';
+                
+                Object.entries(userStats).forEach(([username, stats]) => {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'user-stats';
+                    
+                    const communitiesList = Object.entries(stats.communities)
+                        .map(([community, count]) => `${community} (${count})`)
+                        .join(', ');
+                    
+                    const datesList = Array.from(stats.dates).join(', ');
+                    
+                    userDiv.innerHTML = `
+                        <h3>${username}</h3>
+                        <div>Total Contributions: ${stats.totalContributions}</div>
+                        <div class="community-list">Communities: ${communitiesList}</div>
+                        <div class="dates-list">Dates: ${datesList}</div>
+                    `;
+                    
+                    container.appendChild(userDiv);
+                });
+            }
+        };
+
+        // Map Module
+        const MapModule = {
+            map: null,
+            currentInfoWindow: null,
+
+            init() {
+                this.map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 13,
+                    center: { lat: 33.93864, lng: -84.4953 },
+                    minZoom: 3,
+                    maxZoom: 18,
+                    restriction: {
+                        latLngBounds: {
+                            north: 85,
+                            south: -85,
+                            west: -180,
+                            east: 180
+                        }
+                    }
+                });
+
+                this.map.addListener('click', () => {
+                    if (this.currentInfoWindow) {
+                        this.currentInfoWindow.close();
+                    }
+                });
+
+                return this.map;
+            },
+
+            addMarker(data) {
+                const marker = new google.maps.Marker({
+                    position: { lat: data.lat, lng: data.lng },
+                    map: this.map,
+                    title: data.community || 'Unknown Location',
+                    label: {
+                        text: data.community || 'Unknown',
+                        className: 'marker-label',
+                        color: 'black'
+                    }
+                });
+
+                const infoContent = `
+                    <div class="info-window">
+                        <h3>${data.community || 'Unknown Location'}</h3>
+                        <p>Posted by: ${data.username || 'Anonymous'}</p>
+                        <p>Date: ${formatDate(data.timestamp)}</p>
+                        ${data.photoUrl ? `
+                            <iframe src="${data.photoUrl}" frameborder="0"></iframe>
+                            ${data.fileId ? `
+                                <p><a href="https://drive.google.com/file/d/${data.fileId}/view" target="_blank">View Full Size</a></p>
+                            ` : ''}
+                        ` : ''}
+                    </div>
+                `;
+
+                const infowindow = new google.maps.InfoWindow({
+                    content: infoContent
+                });
+
+                marker.addListener('click', () => {
+                    if (this.currentInfoWindow) {
+                        this.currentInfoWindow.close();
+                    }
+                    infowindow.open(this.map, marker);
+                    this.currentInfoWindow = infowindow;
+                });
+
+                return marker;
+            }
+        };
+
+        // Data Management Module
+        const DataManager = {
+            SHEET_ID: '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8',
+            
+            async fetchData() {
+                try {
+                    const response = await fetch(`https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:json`);
+                    const text = await response.text();
+                    const data = JSON.parse(text.substring(47).slice(0, -2));
+                    return this.processData(data);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    return null;
+                }
+            },
+
+            processData(data) {
+                const userStats = {};
+                const markers = [];
+
+                const sortedRows = data.table.rows
+                    .map(row => ({
+                        timestamp: row.c[0]?.v,
+                        data: row,
+                        date: row.c[0]?.v ? new Date(row.c[0].v.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$1-$2')) : new Date(0)
+                    }))
+                    .sort((a, b) => b.date - a.date);
+
+                sortedRows.forEach(({data: row}) => {
+                    const timestamp = row.c[0]?.v;
+                    const username = row.c[1]?.v || 'Anonymous';
+                    const community = row.c[2]?.v || 'Unknown Location';
+                    const lat = row.c[3]?.v;
+                    const lng = row.c[4]?.v;
+                    const originalPhotoUrl = row.c[5]?.v;
+
+                    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                        // Process for markers
+                        const photoUrl = getGoogleDriveImageUrl(originalPhotoUrl);
+                        let fileId = '';
+                        if (originalPhotoUrl) {
+                            if (originalPhotoUrl.includes('/file/d/')) {
+                                fileId = originalPhotoUrl.match(/\/file\/d\/([^/]+)/)?.[1];
+                            } else if (originalPhotoUrl.includes('id=')) {
+                                fileId = originalPhotoUrl.match(/id=([^&]+)/)?.[1];
+                            }
+                        }
+
+                        markers.push({
+                            lat, lng, community, username, timestamp, photoUrl, fileId
+                        });
+
+                        // Process for stats
+                        if (!userStats[username]) {
+                            userStats[username] = {
+                                totalContributions: 0,
+                                communities: {},
+                                dates: new Set()
+                            };
+                        }
+
+                        userStats[username].totalContributions++;
+                        if (!userStats[username].communities[community]) {
+                            userStats[username].communities[community] = 0;
+                        }
+                        userStats[username].communities[community]++;
+                        userStats[username].dates.add(formatDate(timestamp));
+                    }
+                });
+
+                return { userStats, markers };
+            }
+        };
+
+        // UI Controls
+        function toggleStatsPanel() {
+            const panel = document.getElementById('stats-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Initialize Application
+        async function initApp() {
+            // Initialize map
+            const map = MapModule.init();
+
+            // Fetch and process data
+            const data = await DataManager.fetchData();
+            if (!data) return;
+
+            // Update stats panel
+            StatsPanel.updatePanel(data.userStats);
+
+            // Add markers to map
+            data.markers.forEach(markerData => {
+                MapModule.addMarker(markerData);
+            });
+
+            // Center map on recent markers
+            if (data.markers.length > 0) {
+                const recentMarkers = data.markers.slice(0, 5);
+                if (recentMarkers.length > 1) {
+                    const bounds = new google.maps.LatLngBounds();
+                    recentMarkers.forEach(marker => {
+                        bounds.extend({ lat: marker.lat, lng: marker.lng });
+                    });
+                    map.fitBounds(bounds);
+                    
+                    google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+                        const zoom = map.getZoom();
+                        if (zoom > 15) map.setZoom(15);
+                        if (zoom < 10) map.setZoom(10);
+                    });
+                } else {
+                    map.setCenter({ lat: recentMarkers[0].lat, lng: recentMarkers[0].lng });
+                    map.setZoom(13);
+                }
+            }
+        }
+
+        // Auto-refresh data every 5 minutes
+        setInterval(async () => {
+            const data = await DataManager.fetchData();
+            if (data) {
+                StatsPanel.updatePanel(data.userStats);
+            }
+        }, 300000);
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC12ICnLkz1Td_Le-ZcjFy_vjWKgdPYXBQ&callback=initApp">
+    </script>
+</body>
+</html>
