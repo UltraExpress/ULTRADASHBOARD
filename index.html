@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>FLYER DOOR POSTING APP</title>
     <style>
         body {
@@ -58,7 +58,7 @@
             border-color: #4facfe;
             box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
         }
-        .camera-button, .change-info-button {
+        .camera-button {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             padding: 20px;
@@ -79,8 +79,18 @@
         }
         .change-info-button {
             background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-            width: 150px;
-            height: 150px;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 0 0 15px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
         .camera-button:hover, .change-info-button:hover {
             transform: translateY(-2px);
@@ -114,6 +124,12 @@
             border-radius: 12px;
             margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .info-text {
+            flex: 1;
         }
         .form-container {
             display: none;
@@ -145,13 +161,14 @@
     </style>
 </head>
 <body>
-    <!-- Rest of the HTML and JavaScript remains exactly the same -->
     <div class="container">
         <h1>FLYER DOOR POSTING APP</h1>
         
         <div class="info-display" id="currentInfo" style="display: none;">
-            <strong>Current User:</strong> <span id="displayUsername"></span><br>
-            <strong>Community:</strong> <span id="displayCommunity"></span>
+            <div class="info-text">
+                <strong>Current User:</strong> <span id="displayUsername"></span><br>
+                <strong>Community:</strong> <span id="displayCommunity"></span>
+            </div>
             <button class="change-info-button" onclick="showForm()">Change Info</button>
         </div>
 
@@ -175,9 +192,7 @@
         </div>
     </div>
 
-    <!-- JavaScript remains exactly the same as before -->
     <script>
-        // All existing JavaScript code remains unchanged
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
         let photoData = null;
         let currentPosition = null;
