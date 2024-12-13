@@ -276,22 +276,31 @@ const StatsPanel = {
             
             const communitiesList = Object.entries(stats.communities)
                 .map(([community, communityStats]) => {
-                    // Determine payment status
+                    // Determine payment status and symbols
                     const { count, paidCount } = communityStats;
                     let backgroundGradient;
+                    let statusSymbols;
                     
                     if (paidCount === 0) {
-                        // No payment - blue
+                        // No payment - blue with X's
                         backgroundGradient = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                        statusSymbols = '❌❌❌❌';
                     } else if (paidCount < count) {
-                        // Partial payment - yellow
+                        // Partial payment - yellow with mix of $ and X
                         backgroundGradient = 'linear-gradient(135deg, #eab308, #ca8a04)';
+                        statusSymbols = '💲💲❌❌';
                     } else {
-                        // Fully paid - green
+                        // Fully paid - green with $ and check
                         backgroundGradient = 'linear-gradient(135deg, #22c55e, #16a34a)';
+                        statusSymbols = '💲💲💲💲✅';
                     }
                     
-                    return `<span class="community-tag" style="cursor: pointer; background: ${backgroundGradient}" onclick="MapModule.centerOnCommunity('${community}')">${community} (${count})</span>`;
+                    return `
+                        <span class="community-tag" 
+                              style="cursor: pointer; background: ${backgroundGradient}" 
+                              onclick="MapModule.centerOnCommunity('${community}')">
+                            ${community} (${count}) ${statusSymbols}
+                        </span>`;
                 })
                 .join('');
             
