@@ -96,37 +96,61 @@
 
     <script>
         // Shared utilities
-        function formatDate(dateStr) {
-            if (!dateStr) return 'No date provided';
-            
-            try {
-                const [date, time] = dateStr.split(' ');
-                if (date && time) {
-                    const [month, day, year] = date.split('/');
-                    const [hour, minute] = time.split(':');
-                    
-                    const dateObj = new Date(year, month - 1, day, hour, minute);
-                    
-                    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                    const getOrdinal = (n) => {
-                        const s = ['th', 'st', 'nd', 'rd'];
-                        const v = n % 100;
-                        return n + (s[(v - 20) % 10] || s[v] || s[0]);
-                    };
-                    
-                    return `${months[dateObj.getMonth()]} ${getOrdinal(dateObj.getDate())} ${dateObj.getFullYear()} ${dateObj.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    })}`;
-                }
-            } catch (e) {
-                console.error('Error formatting date:', e);
-            }
-            
-            return dateStr;
-        }
 
+
+
+
+
+
+
+
+        
+       function formatDate(dateStr) {
+    if (!dateStr) return 'No date provided';
+    
+    try {
+        const [datePart, timePart] = dateStr.split(' ');
+        if (datePart && timePart) {
+            const [month, day, year] = datePart.split('/');
+            const [hour, minute, second] = timePart.split(':');
+            
+            const date = new Date(year, month - 1, day, hour, minute, second);
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthName = months[date.getMonth()];
+            
+            const dayNum = date.getDate();
+            const ordinal = (n) => {
+                const s = ['th', 'st', 'nd', 'rd'];
+                const v = n % 100;
+                return n + (s[(v - 20) % 10] || s[v] || s[0]);
+            };
+            
+            const timeStr = date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            return `${monthName} ${ordinal(dayNum)}, ${date.getFullYear()} at ${timeStr}`;
+        }
+    } catch (e) {
+        console.error('Error formatting date:', e);
+    }
+    
+    return dateStr;
+}
+
+
+
+
+
+
+
+
+
+
+        
         function getGoogleDriveImageUrl(url) {
             if (!url) return '';
             return url.replace('/view?usp=drivesdk', '/preview');
