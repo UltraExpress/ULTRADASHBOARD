@@ -156,34 +156,46 @@
             return url.replace('/view?usp=drivesdk', '/preview');
         }
 
-        // Stats Panel Module
-        const StatsPanel = {
-            updatePanel(userStats) {
-                const container = document.getElementById('user-stats-container');
-                container.innerHTML = '';
-                
-                Object.entries(userStats).forEach(([username, stats]) => {
-                    const userDiv = document.createElement('div');
-                    userDiv.className = 'user-stats';
-                    
-                    const communitiesList = Object.entries(stats.communities)
-                        .map(([community, count]) => `${community} (${count})`)
-                        .join(', ');
-                    
-                    const datesList = Array.from(stats.dates).join(', ');
-                    
-                    userDiv.innerHTML = `
-                        <h3>${username}</h3>
-                        <div>Total Contributions: ${stats.totalContributions}</div>
-                        <div class="community-list">Communities: ${communitiesList}</div>
-                        <div class="dates-list">Dates: ${datesList}</div>
-                    `;
-                    
-                    container.appendChild(userDiv);
-                });
-            }
-        };
 
+
+
+
+
+        
+     const StatsPanel = {
+    updatePanel(userStats) {
+        const container = document.getElementById('user-stats-container');
+        container.innerHTML = '';
+        
+        Object.entries(userStats).forEach(([username, stats]) => {
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user-stats';
+            
+            const communitiesList = Object.entries(stats.communities)
+                .map(([community, count]) => `${community} (${count})`)
+                .join(', ');
+            
+            const datesList = Array.from(stats.dates)
+                .map(date => formatDate(date))
+                .join('<br>');
+            
+            userDiv.innerHTML = `
+                <h3>${username}</h3>
+                <div>Total Contributions: ${stats.totalContributions}</div>
+                <div class="community-list">Communities: ${communitiesList}</div>
+                <div class="dates-list">Dates:<br>${datesList}</div>
+            `;
+            
+            container.appendChild(userDiv);
+        });
+    }
+};
+
+
+
+
+
+        
         // Map Module
         const MapModule = {
             map: null,
@@ -322,7 +334,7 @@
                             userStats[username].communities[community] = 0;
                         }
                         userStats[username].communities[community]++;
-                        userStats[username].dates.add(formatDate(timestamp));
+                      userStats[username].dates.add(formatDate(timestamp));
                     }
                 });
 
