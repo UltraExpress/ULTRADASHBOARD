@@ -24,11 +24,57 @@
 <body>
     <div id="map"></div>
     <script>
-        function formatDate(dateStr) {
-            // Just return the date string directly from the spreadsheet
-            // as it's already in a readable format
-            return dateStr || 'No date provided';
+      
+        
+        
+        
+        
+        
+        
+        
+function formatDate(dateStr) {
+    if (!dateStr) return 'No date provided';
+    
+    try {
+        // Split the date string (e.g., "12/12/2024 12:12:34")
+        const [date, time] = dateStr.split(' ');
+        if (date && time) {
+            const [month, day, year] = date.split('/');
+            const [hour, minute] = time.split(':');
+            
+            // Create date object
+            const dateObj = new Date(year, month - 1, day, hour, minute);
+            
+            // Format to "JAN 24th 2024 12:12 PM"
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            const getOrdinal = (n) => {
+                const s = ['th', 'st', 'nd', 'rd'];
+                const v = n % 100;
+                return n + (s[(v - 20) % 10] || s[v] || s[0]);
+            };
+            
+            return `${months[dateObj.getMonth()]} ${getOrdinal(dateObj.getDate())} ${dateObj.getFullYear()} ${dateObj.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            })}`;
         }
+    } catch (e) {
+        console.error('Error formatting date:', e);
+    }
+    
+    return dateStr; // Fallback to original string if parsing fails
+}
+
+
+
+
+
+
+
+
+
+        
 
         function getGoogleDriveImageUrl(url) {
             if (!url) return '';
