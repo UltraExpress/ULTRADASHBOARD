@@ -259,11 +259,6 @@ function formatDate(dateStr) {
 
 
 
-
-
-        
-
-// Replace the existing updatePanel function in the StatsPanel object
 const StatsPanel = {
     updatePanel(userStats) {
         const container = document.getElementById('user-stats-container');
@@ -275,7 +270,7 @@ const StatsPanel = {
             
             const communitiesList = Object.entries(stats.communities)
                 .map(([community, count]) => 
-                    `<span class="community-tag">${community} (${count})</span>`
+                    `<span class="community-tag" style="cursor: pointer" onclick="MapModule.centerOnCommunity('${community}')">${community} (${count})</span>`
                 )
                 .join('');
             
@@ -308,83 +303,124 @@ const StatsPanel = {
     }
 };
 
+        
+
 
 
 
 
         
-        // Map Module
-        const MapModule = {
-            map: null,
-            currentInfoWindow: null,
 
-            init() {
-                this.map = new google.maps.Map(document.getElementById('map'), {
-                    zoom: 13,
-                    center: { lat: 33.93864, lng: -84.4953 },
-                    minZoom: 3,
-                    maxZoom: 18,
-                    restriction: {
-                        latLngBounds: {
-                            north: 85,
-                            south: -85,
-                            west: -180,
-                            east: 180
-                        }
-                    }
-                });
 
-                this.map.addListener('click', () => {
-                    if (this.currentInfoWindow) {
-                        this.currentInfoWindow.close();
-                    }
-                });
 
-                return this.map;
-            },
+// Map Module
+const MapModule = {
+    map: null,
+    currentInfoWindow: null,
+    markers: [],
 
-            addMarker(data) {
-                const marker = new google.maps.Marker({
-                    position: { lat: data.lat, lng: data.lng },
-                    map: this.map,
-                    title: data.community || 'Unknown Location',
-                    label: {
-                        text: data.community || 'Unknown',
-                        className: 'marker-label',
-                        color: 'black'
-                    }
-                });
-
-                const infoContent = `
-                    <div class="info-window">
-                        <h3>${data.community || 'Unknown Location'}</h3>
-                        <p>Posted by: ${data.username || 'Anonymous'}</p>
-                        <p>Date: ${formatDate(data.timestamp)}</p>
-                        ${data.photoUrl ? `
-                            <iframe src="${data.photoUrl}" frameborder="0"></iframe>
-                            ${data.fileId ? `
-                                <p><a href="https://drive.google.com/file/d/${data.fileId}/view" target="_blank">View Full Size</a></p>
-                            ` : ''}
-                        ` : ''}
-                    </div>
-                `;
-
-                const infowindow = new google.maps.InfoWindow({
-                    content: infoContent
-                });
-
-                marker.addListener('click', () => {
-                    if (this.currentInfoWindow) {
-                        this.currentInfoWindow.close();
-                    }
-                    infowindow.open(this.map, marker);
-                    this.currentInfoWindow = infowindow;
-                });
-
-                return marker;
+    init() {
+        this.map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 13,
+            center: { lat: 33.93864, lng: -84.4953 },
+            minZoom: 3,
+            maxZoom: 18,
+            restriction: {
+                latLngBounds: {
+                    north: 85,
+                    south: -85,
+                    west: -180,
+                    east: 180
+                }
             }
-        };
+        });
 
+        this.map.addListener('click', () => {
+            if (this.currentInfoWindow) {
+                this.currentInfoWindow.close();
+            }
+        });
+
+        return this.map;
+    },
+
+    addMarker(data) {
+        const marker = new google.maps.Marker({
+            position: { lat: data.lat, lng: data.lng },
+            map: this.map,
+            title: data.community || 'Unknown Location',
+            label: {
+                text: data.community || 'Unknown',
+                className: 'marker-label',
+                color: 'black'
+            }
+        });
+
+        this.markers.push({
+            marker: marker,
+            community: data.community
+        });
+
+        const infoContent = `
+            <div class="info-window">
+                <h3>${data.community || 'Unknown Location'}</h3>
+                <p>Posted by: ${data.username || 'Anonymous'}</p>
+                <p>Date: ${formatDate(data.timestamp)}</p>
+                ${data.photoUrl ? `
+                    <iframe src="${data.photoUrl}" frameborder="0"></iframe>
+                    ${data.fileId ? `
+                        <p><a href="https://drive.google.com/file/d/${data.fileId}/view" target="_blank">View Full Size</a></p>
+                    ` : ''}
+                ` : ''}
+            </div>
+        `;
+
+        const infowindow = new google.maps.InfoWindow({
+            content: infoContent
+        });
+
+        marker.addListener('click', () => {
+            if (this.currentInfoWindow) {
+                this.currentInfoWindow.close();
+            }
+            infowindow.open(this.map, marker);
+            this.currentInfoWindow = infowindow;
+        });
+
+        return marker;
+    },
+
+    centerOnCommunity(communityName) {
+        const communityMarkers = this.markers.filter(m => m.community === communityName);
+        
+        if (communityMarkers.length > 0) {
+            const bounds = new google.maps.LatLngBounds();
+            
+            communityMarkers.forEach(({marker}) => {
+                bounds.extend(marker.getPosition());
+            });
+
+            this.map.fitBounds(bounds);
+            
+            // Adjust zoom if too close or too far
+            google.maps.event.addListenerOnce(this.map, 'bounds_changed', () => {
+                const zoom = this.map.getZoom();
+                if (zoom > 15) this.map.setZoom(15);
+                if (zoom < 10) this.map.setZoom(10);
+            });
+        }
+    }
+};
+
+
+
+
+
+
+
+
+
+        
         // Data Management Module
         const DataManager = {
             SHEET_ID: '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8',
