@@ -77,20 +77,36 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
+        .info-display {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .info-text {
+            flex: 1;
+            line-height: 1.6;
+        }
         .change-info-button {
             background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
             color: white;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            margin: 0 0 0 15px;
+            white-space: nowrap;
             transition: all 0.3s ease;
             text-transform: uppercase;
             font-weight: bold;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.37);
+            height: fit-content;
+            min-width: fit-content;
         }
         .camera-button:hover, .change-info-button:hover {
             transform: translateY(-2px);
@@ -117,19 +133,6 @@
         }
         #photoInput {
             display: none;
-        }
-        .info-display {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .info-text {
-            flex: 1;
         }
         .form-container {
             display: none;
