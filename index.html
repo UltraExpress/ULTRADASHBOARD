@@ -3,87 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Capture</title>
+    <title>FLYER DOOR POSTING APP</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            background: #f0f2f5;
+            background: #13111C;
+            color: #fff;
         }
         .container {
-            background: white;
+            background: linear-gradient(145deg, #1a1825, #252331);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px);
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 24px;
+            margin-bottom: 30px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4facfe;
         }
         input, select {
             width: 100%;
-            padding: 8px;
+            padding: 12px;
             margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.3);
         }
         .camera-button, .change-info-button {
-            background: #4285f4;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 12px 20px;
+            padding: 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 20px;
             cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            margin-bottom: 10px;
+            width: 200px;
+            height: 200px;
+            font-size: 18px;
+            margin: 10px auto;
+            display: block;
+            aspect-ratio: 1;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
         .change-info-button {
-            background: #34a853;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            width: 150px;
+            height: 150px;
         }
-        .camera-button:hover {
-            background: #3367d6;
-        }
-        .change-info-button:hover {
-            background: #2d8745;
+        .camera-button:hover, .change-info-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.47);
         }
         #preview {
             width: 100%;
             max-width: 300px;
             display: none;
-            margin: 10px 0;
+            margin: 10px auto;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
-
-
-
-.loading {
-    display: none;
-    text-align: center;
-    margin: 10px 0;
-    padding: 15px;
-    background: #e3f2fd;
-    border-radius: 4px;
-    font-weight: bold;
-    color: #1976d2;
-}
-
-
-        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(79, 172, 254, 0.1);
+            border-radius: 12px;
+            font-weight: bold;
+            color: #4facfe;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+        }
         #photoInput {
             display: none;
         }
         .info-display {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .form-container {
             display: none;
@@ -91,20 +118,40 @@
         .form-container.show {
             display: block;
         }
+        #photoSection .camera-button {
+            font-size: 28px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 250px;
+            height: 250px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(79, 172, 254, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(79, 172, 254, 0);
+            }
+        }
+        strong {
+            color: #4facfe;
+        }
     </style>
 </head>
 <body>
+    <!-- Rest of the HTML and JavaScript remains exactly the same -->
     <div class="container">
-        <h1>Photo Capture</h1>
+        <h1>FLYER DOOR POSTING APP</h1>
         
-        <!-- Current Info Display -->
         <div class="info-display" id="currentInfo" style="display: none;">
             <strong>Current User:</strong> <span id="displayUsername"></span><br>
             <strong>Community:</strong> <span id="displayCommunity"></span>
             <button class="change-info-button" onclick="showForm()">Change Info</button>
         </div>
 
-        <!-- Form Container -->
         <div id="formContainer" class="form-container show">
             <div class="form-group">
                 <label for="username">Your Name:</label>
@@ -117,21 +164,21 @@
             <button class="camera-button" onclick="saveUserInfo()">Start Taking Photos</button>
         </div>
 
-        <!-- Photo Capture Section -->
         <div id="photoSection" style="display: none;">
             <input type="file" id="photoInput" accept="image/*" capture="environment">
-            <button class="camera-button" onclick="document.getElementById('photoInput').click()">Take Photo</button>
+            <button class="camera-button" onclick="document.getElementById('photoInput').click()">TAKE PICTURE</button>
             <img id="preview" alt="Preview">
             <div class="loading">Uploading photo...</div>
         </div>
     </div>
 
+    <!-- JavaScript remains exactly the same as before -->
     <script>
+        // All existing JavaScript code remains unchanged
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
         let photoData = null;
         let currentPosition = null;
 
-        // Check for saved user info on load
         document.addEventListener('DOMContentLoaded', function() {
             const savedUsername = localStorage.getItem('username');
             const savedCommunity = localStorage.getItem('community');
@@ -143,7 +190,6 @@
             }
         });
 
-        // Get location permission early
         navigator.geolocation.getCurrentPosition(pos => {
             currentPosition = {
                 latitude: pos.coords.latitude,
@@ -202,87 +248,75 @@
             }
         });
 
-function compressImage(base64, maxWidth = 1024) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = base64;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const scale = maxWidth / img.width;
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/jpeg', 0.6)); // Compress to 60% quality
-        };
-    });
-}
+        function compressImage(base64, maxWidth = 1024) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const scale = maxWidth / img.width;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+            });
+        }
 
+        async function uploadData() {
+            if (!photoData || !currentPosition) {
+                alert('Please ensure camera and location access are enabled');
+                return;
+            }
 
+            const username = localStorage.getItem('username');
+            const community = localStorage.getItem('community');
 
+            if (!username || !community) {
+                alert('Please fill in your information first');
+                showForm();
+                return;
+            }
 
-        
+            document.querySelector('.loading').style.display = 'block';
+            document.querySelector('.loading').textContent = 'Compressing image...';
+            
+            try {
+                const compressedPhoto = await compressImage(photoData);
+                console.log("Original size:", Math.round(photoData.length/1024), "KB");
+                console.log("Compressed size:", Math.round(compressedPhoto.length/1024), "KB");
 
+                document.querySelector('.loading').textContent = 'Uploading...';
 
-async function uploadData() {
-    if (!photoData || !currentPosition) {
-        alert('Please ensure camera and location access are enabled');
-        return;
-    }
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('community', community);
+                formData.append('latitude', currentPosition.latitude);
+                formData.append('longitude', currentPosition.longitude);
+                formData.append('photo', compressedPhoto);
 
-    const username = localStorage.getItem('username');
-    const community = localStorage.getItem('community');
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData
+                });
+                
+                document.getElementById('preview').style.display = 'none';
+                document.getElementById('photoInput').value = '';
+                photoData = null;
+                document.querySelector('.loading').textContent = 'Upload complete!';
+                setTimeout(() => {
+                    document.querySelector('.loading').style.display = 'none';
+                    document.querySelector('.loading').textContent = 'Uploading...';
+                }, 2000);
 
-    if (!username || !community) {
-        alert('Please fill in your information first');
-        showForm();
-        return;
-    }
-
-    document.querySelector('.loading').style.display = 'block';
-    document.querySelector('.loading').textContent = 'Compressing image...';
-    
-    try {
-        // Compress image before upload
-        const compressedPhoto = await compressImage(photoData);
-        console.log("Original size:", Math.round(photoData.length/1024), "KB");
-        console.log("Compressed size:", Math.round(compressedPhoto.length/1024), "KB");
-
-        document.querySelector('.loading').textContent = 'Uploading...';
-
-        const formData = new URLSearchParams();
-        formData.append('username', username);
-        formData.append('community', community);
-        formData.append('latitude', currentPosition.latitude);
-        formData.append('longitude', currentPosition.longitude);
-        formData.append('photo', compressedPhoto);
-
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // This was key in our working version
-            body: formData
-        });
-        
-        document.getElementById('preview').style.display = 'none';
-        document.getElementById('photoInput').value = '';
-        photoData = null;
-        document.querySelector('.loading').textContent = 'Upload complete!';
-        setTimeout(() => {
-            document.querySelector('.loading').style.display = 'none';
-            document.querySelector('.loading').textContent = 'Uploading...';
-        }, 2000);
-
-    } catch (error) {
-        console.error("Upload error:", error);
-        alert('Error uploading: ' + error.toString());
-        document.querySelector('.loading').style.display = 'none';
-    }
-}
-
-        
-
-
-        
+            } catch (error) {
+                console.error("Upload error:", error);
+                alert('Error uploading: ' + error.toString());
+                document.querySelector('.loading').style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
