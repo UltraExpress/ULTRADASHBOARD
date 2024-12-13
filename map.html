@@ -91,7 +91,7 @@ function formatDate(dateStr) {
 function initMap() {
     const map = new google.maps.Map(document.getElementById('map'), {
         zoom: 13,
-        center: { lat: 33.93864, lng: -84.4953 }, // Default center, will be updated
+        center: { lat: 33.93864, lng: -84.4953 }, // Default center
         minZoom: 3,
         maxZoom: 18,
         restriction: {
@@ -113,40 +113,51 @@ function initMap() {
             const data = JSON.parse(text.substring(47).slice(0, -2));
             let hasValidMarkers = false;
             
-            // Convert rows to array and sort by timestamp (most recent first)
+            // Improved timestamp parsing and sorting
             const sortedRows = data.table.rows
                 .map(row => ({
                     timestamp: row.c[0]?.v,
-                    data: row
+                    data: row,
+                    date: row.c[0]?.v ? new Date(row.c[0].v.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$1-$2')) : new Date(0)
                 }))
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                .sort((a, b) => b.date - a.date); // Sort by parsed date
 
-            // Get coordinates of the most recent valid pins (latest 5)
-            const recentValidPins = sortedRows
-                .slice(0, 5)  // Take latest 5 entries
-                .map(row => {
-                    const lat = row.data.c[3]?.v;
-                    const lng = row.data.c[4]?.v;
-                    return (lat && lng && !isNaN(lat) && !isNaN(lng)) ? { lat, lng } : null;
-                })
-                .filter(coord => coord !== null);  // Remove any invalid coordinates
+            // Get valid coordinates from the most recent entries first
+            const recentValidPins = [];
+            for (let i = 0; i < sortedRows.length && recentValidPins.length < 5; i++) {
+                const row = sortedRows[i].data;
+                const lat = row.c[3]?.v;
+                const lng = row.c[4]?.v;
+                
+                if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                    recentValidPins.push({ lat, lng });
+                }
+            }
 
-            // Create bounds for recent pins
+            // Center map on recent pins if we have any
             if (recentValidPins.length > 0) {
                 const recentBounds = new google.maps.LatLngBounds();
                 recentValidPins.forEach(coord => recentBounds.extend(coord));
                 
-                // Center map on recent pins
-                map.fitBounds(recentBounds);
+                // First set center to the first recent pin
+                map.setCenter(recentValidPins[0]);
                 
-                // Adjust zoom if too far out or in
-                google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-                    if (map.getZoom() > 15) map.setZoom(15);
-                    if (map.getZoom() < 10) map.setZoom(10);
-                });
+                // Then fit bounds if we have multiple pins
+                if (recentValidPins.length > 1) {
+                    map.fitBounds(recentBounds);
+                    
+                    // Adjust zoom after bounds are set
+                    google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+                        const zoom = map.getZoom();
+                        if (zoom > 15) map.setZoom(15);
+                        if (zoom < 10) map.setZoom(10);
+                    });
+                } else {
+                    map.setZoom(13); // Default zoom for single pin
+                }
             }
 
-            // Process all markers (including old ones)
+            // Process all markers
             sortedRows.forEach(({data: row}) => {
                 const timestamp = row.c[0]?.v;
                 const username = row.c[1]?.v;
