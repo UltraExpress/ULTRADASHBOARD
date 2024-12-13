@@ -91,7 +91,7 @@ function formatDate(dateStr) {
 function initMap() {
     const map = new google.maps.Map(document.getElementById('map'), {
         zoom: 13,
-        center: { lat: 33.93864, lng: -84.4953 },
+        center: { lat: 33.93864, lng: -84.4953 }, // Default center, will be updated
         minZoom: 3,
         maxZoom: 18,
         restriction: {
@@ -111,7 +111,6 @@ function initMap() {
         .then(response => response.text())
         .then(text => {
             const data = JSON.parse(text.substring(47).slice(0, -2));
-            const bounds = new google.maps.LatLngBounds();
             let hasValidMarkers = false;
             
             // Convert rows to array and sort by timestamp (most recent first)
@@ -122,22 +121,32 @@ function initMap() {
                 }))
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            // Calculate center of recent pins (e.g., last 5 pins)
-            const recentPins = sortedRows.slice(0, 5)
-                .map(row => ({
-                    lat: row.data.c[3]?.v,
-                    lng: row.data.c[4]?.v
-                }))
-                .filter(coord => coord.lat && coord.lng && !isNaN(coord.lat) && !isNaN(coord.lng));
+            // Get coordinates of the most recent valid pins (latest 5)
+            const recentValidPins = sortedRows
+                .slice(0, 5)  // Take latest 5 entries
+                .map(row => {
+                    const lat = row.data.c[3]?.v;
+                    const lng = row.data.c[4]?.v;
+                    return (lat && lng && !isNaN(lat) && !isNaN(lng)) ? { lat, lng } : null;
+                })
+                .filter(coord => coord !== null);  // Remove any invalid coordinates
 
-            if (recentPins.length > 0) {
-                const centerLat = recentPins.reduce((sum, pin) => sum + pin.lat, 0) / recentPins.length;
-                const centerLng = recentPins.reduce((sum, pin) => sum + pin.lng, 0) / recentPins.length;
-                map.setCenter({ lat: centerLat, lng: centerLng });
-                map.setZoom(13); // Set an appropriate zoom level for the cluster
+            // Create bounds for recent pins
+            if (recentValidPins.length > 0) {
+                const recentBounds = new google.maps.LatLngBounds();
+                recentValidPins.forEach(coord => recentBounds.extend(coord));
+                
+                // Center map on recent pins
+                map.fitBounds(recentBounds);
+                
+                // Adjust zoom if too far out or in
+                google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+                    if (map.getZoom() > 15) map.setZoom(15);
+                    if (map.getZoom() < 10) map.setZoom(10);
+                });
             }
 
-            // Process all markers
+            // Process all markers (including old ones)
             sortedRows.forEach(({data: row}) => {
                 const timestamp = row.c[0]?.v;
                 const username = row.c[1]?.v;
@@ -196,17 +205,8 @@ function initMap() {
                         infowindow.open(map, marker);
                         currentInfoWindow = infowindow;
                     });
-
-                    bounds.extend({ lat, lng });
                 }
             });
-
-            if (hasValidMarkers) {
-                map.fitBounds(bounds);
-                google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-                    if (map.getZoom() > 15) map.setZoom(15);
-                });
-            }
         })
         .catch(error => {
             console.error('Error loading map data:', error);
