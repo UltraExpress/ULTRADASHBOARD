@@ -11,67 +11,145 @@
             height: 100vh;
             overflow: hidden;
         }
-        
-        #stats-panel {
-            height: 250px;
-            background: white;
-            padding: 15px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .user-stats {
-            border: 1px solid #eee;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        
-        .user-stats h3 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .community-list {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        
-        .dates-list {
-            color: #666;
-            font-size: 12px;
-        }
-        
-        #map { 
-            flex: 1;
-            width: 100%;
-        }
-        
-        .info-window { 
-            max-width: 300px; 
-        }
-        
-        .info-window iframe { 
-            max-width: 100%; 
-            height: 200px; 
-            margin-top: 10px;
-            border-radius: 4px;
-        }
-        
-        .marker-label {
-            background-color: white;
-            padding: 2px 6px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            font-size: 12px;
-        }
 
+
+
+
+
+
+
+
+        
+    
+#stats-panel {
+    height: 250px;
+    background: linear-gradient(to right, #f8fafc, #eff6ff);
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.user-stats {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+}
+
+.user-stats:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+}
+
+.user-stats h3 {
+    margin: 0 0 16px 0;
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-stats h3::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.stats-main {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stats-item {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.stats-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.community-list {
+    margin: 16px 0;
+    font-size: 0.875rem;
+}
+
+.community-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border-radius: 9999px;
+    margin: 0 4px 4px 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.dates-list {
+    color: #64748b;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.toggle-panel {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    border: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.toggle-panel:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+
+
+
+
+
+
+
+
+        
         .toggle-panel {
             position: fixed;
             top: 10px;
@@ -187,8 +265,13 @@ function formatDate(dateStr) {
 
 
 
+
+
+
         
-     const StatsPanel = {
+
+// Replace the existing updatePanel function in the StatsPanel object
+const StatsPanel = {
     updatePanel(userStats) {
         const container = document.getElementById('user-stats-container');
         container.innerHTML = '';
@@ -198,8 +281,10 @@ function formatDate(dateStr) {
             userDiv.className = 'user-stats';
             
             const communitiesList = Object.entries(stats.communities)
-                .map(([community, count]) => `${community} (${count})`)
-                .join(', ');
+                .map(([community, count]) => 
+                    `<span class="community-tag">${community} (${count})</span>`
+                )
+                .join('');
             
             const datesList = Array.from(stats.dates)
                 .map(date => formatDate(date))
@@ -207,9 +292,22 @@ function formatDate(dateStr) {
             
             userDiv.innerHTML = `
                 <h3>${username}</h3>
-                <div>Total Contributions: ${stats.totalContributions}</div>
-                <div class="community-list">Communities: ${communitiesList}</div>
-                <div class="dates-list">Dates:<br>${datesList}</div>
+                <div class="stats-main">
+                    <div class="stats-item">
+                        <div class="stats-label">Total Contributions</div>
+                        <div class="stats-value">${stats.totalContributions}</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-label">Communities</div>
+                        <div class="stats-value">${Object.keys(stats.communities).length}</div>
+                    </div>
+                </div>
+                <div class="community-list">
+                    ${communitiesList}
+                </div>
+                <div class="dates-list">
+                    Recent Activity:<br>${datesList}
+                </div>
             `;
             
             container.appendChild(userDiv);
