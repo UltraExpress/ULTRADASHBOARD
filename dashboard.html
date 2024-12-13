@@ -259,6 +259,12 @@ function formatDate(dateStr) {
 
 
 
+
+
+
+        
+
+
 const StatsPanel = {
     updatePanel(userStats) {
         const container = document.getElementById('user-stats-container');
@@ -269,9 +275,24 @@ const StatsPanel = {
             userDiv.className = 'user-stats';
             
             const communitiesList = Object.entries(stats.communities)
-                .map(([community, count]) => 
-                    `<span class="community-tag" style="cursor: pointer" onclick="MapModule.centerOnCommunity('${community}')">${community} (${count})</span>`
-                )
+                .map(([community, communityStats]) => {
+                    // Determine payment status
+                    const { count, paidCount } = communityStats;
+                    let backgroundGradient;
+                    
+                    if (paidCount === 0) {
+                        // No payment - blue
+                        backgroundGradient = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                    } else if (paidCount < count) {
+                        // Partial payment - yellow
+                        backgroundGradient = 'linear-gradient(135deg, #eab308, #ca8a04)';
+                    } else {
+                        // Fully paid - green
+                        backgroundGradient = 'linear-gradient(135deg, #22c55e, #16a34a)';
+                    }
+                    
+                    return `<span class="community-tag" style="cursor: pointer; background: ${backgroundGradient}" onclick="MapModule.centerOnCommunity('${community}')">${community} (${count})</span>`;
+                })
                 .join('');
             
             const datesList = Array.from(stats.dates)
@@ -302,7 +323,6 @@ const StatsPanel = {
         });
     }
 };
-
         
 
 
