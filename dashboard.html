@@ -77,9 +77,13 @@
     flex-shrink: 0;
 }
 
+
+
+
+
 .stats-main {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -97,10 +101,22 @@
 }
 
 .stats-value {
-    font-size: 1.5rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: #0f172a;
 }
+
+.stats-date {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+
+
+        
 
 .community-list {
     margin: 16px 0;
@@ -274,23 +290,23 @@ const StatsPanel = {
             const userDiv = document.createElement('div');
             userDiv.className = 'user-stats';
             
+            // Get most recent date from the dates Set
+            const mostRecentDate = Array.from(stats.dates)
+                .sort((a, b) => new Date(b) - new Date(a))[0];
+            
             const communitiesList = Object.entries(stats.communities)
                 .map(([community, communityStats]) => {
-                    // Determine payment status and symbols
                     const { count, paidCount } = communityStats;
                     let backgroundGradient;
                     let statusSymbols;
                     
                     if (paidCount === 0) {
-                        // No payment - blue with X's
                         backgroundGradient = 'linear-gradient(135deg, #3b82f6, #2563eb)';
                         statusSymbols = '❌❌❌❌';
                     } else if (paidCount < count) {
-                        // Partial payment - yellow with mix of $ and X
                         backgroundGradient = 'linear-gradient(135deg, #eab308, #ca8a04)';
                         statusSymbols = '💲💲❌❌';
                     } else {
-                        // Fully paid - green with $ and check
                         backgroundGradient = 'linear-gradient(135deg, #22c55e, #16a34a)';
                         statusSymbols = '💲💲💲💲✅';
                     }
@@ -304,10 +320,6 @@ const StatsPanel = {
                 })
                 .join('');
             
-            const datesList = Array.from(stats.dates)
-                .map(date => formatDate(date))
-                .join('<br>');
-            
             userDiv.innerHTML = `
                 <h3>${username}</h3>
                 <div class="stats-main">
@@ -319,12 +331,13 @@ const StatsPanel = {
                         <div class="stats-label">Communities</div>
                         <div class="stats-value">${Object.keys(stats.communities).length}</div>
                     </div>
+                    <div class="stats-item">
+                        <div class="stats-label">Last Active</div>
+                        <div class="stats-value stats-date">${formatDate(mostRecentDate)}</div>
+                    </div>
                 </div>
                 <div class="community-list">
                     ${communitiesList}
-                </div>
-                <div class="dates-list">
-                    Recent Activity:<br>${datesList}
                 </div>
             `;
             
