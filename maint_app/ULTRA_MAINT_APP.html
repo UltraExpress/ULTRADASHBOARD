@@ -148,8 +148,15 @@
                 <label for="location">Location:</label>
                 <select id="location" required>
                     <option value="">Select Location</option>
-                    <option value="SANTA ANA">SANTA ANA</option>
                     <option value="RIVERSIDE">RIVERSIDE</option>
+                    <option value="SANTA ANA">SANTA ANA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="part">Part/Area to Maintain:</label>
+                <select id="part" required disabled>
+                    <option value="">Select Location First</option>
                 </select>
             </div>
 
@@ -193,6 +200,12 @@
         let photoData = null;
         let videoBlob = null;
 
+        // Parts loading configuration
+        const CHECKLIST_URLS = {
+            'RIVERSIDE': 'https://ultraexpress.github.io/QC/riverside-checklist.json',
+            'SANTA ANA': 'https://ultraexpress.github.io/QC/speedie-checklist.json'
+        };
+
         // Initialize geolocation
         navigator.geolocation.getCurrentPosition(pos => {
             currentPosition = {
@@ -227,6 +240,54 @@
                 select.classList.add('status-complete');
             }
         }
+
+        // Function to populate parts dropdown - maintaining original order
+        function populatePartsDropdown(data) {
+            const partSelect = document.getElementById('part');
+            partSelect.innerHTML = '<option value="">Select Part/Area to Maintain</option>';
+            
+            data.items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.name;
+                partSelect.appendChild(option);
+            });
+        }
+
+        // Function to load parts data based on location
+        async function loadPartsData(location) {
+            const url = CHECKLIST_URLS[location];
+            if (!url) {
+                console.error('Invalid location selected');
+                return;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                populatePartsDropdown(data);
+            } catch (error) {
+                console.error('Error loading parts data:', error);
+                alert('Error loading parts list. Please check your internet connection and try again.');
+            }
+        }
+
+        // Location change handler
+        document.getElementById('location').addEventListener('change', function(e) {
+            const selectedLocation = this.value;
+            if (selectedLocation) {
+                const partSelect = document.getElementById('part');
+                partSelect.innerHTML = '<option value="">Loading parts...</option>';
+                partSelect.disabled = true;
+                
+                loadPartsData(selectedLocation).then(() => {
+                    partSelect.disabled = false;
+                });
+            }
+        });
 
         // Photo handling
         document.getElementById('photoButton').addEventListener('click', function() {
@@ -289,6 +350,8 @@
                 const formData = new FormData();
                 formData.append('name', document.getElementById('name').value);
                 formData.append('location', document.getElementById('location').value);
+                formData.append('partId', document.getElementById('part').value);
+                formData.append('partName', document.getElementById('part').options[document.getElementById('part').selectedIndex].text);
                 formData.append('status', document.getElementById('status').value);
                 formData.append('notes', document.getElementById('notes').value);
                 formData.append('latitude', currentPosition.latitude);
@@ -317,6 +380,7 @@
                     document.getElementById('photoPreview').style.display = 'none';
                     document.getElementById('videoPreview').style.display = 'none';
                     document.getElementById('status').className = '';
+                    document.getElementById('part').disabled = true;
                     photoData = null;
                     videoBlob = null;
                 }, 2000);
