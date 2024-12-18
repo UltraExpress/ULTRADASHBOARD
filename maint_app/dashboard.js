@@ -1,6 +1,3 @@
-// Configuration
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy9jocVrp5QvarA8NUbDwUToVxe5SqgihsDjDhgb1ZnKEPfydjC5b1K7blJnS8HiN0_w/exec';
-
 // Global state
 let currentData = {
     stats: {
@@ -25,25 +22,16 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeDashboard() {
     try {
         console.log('Starting initialization...');
+        updateConnectionStatus('Connecting...', 'connecting');
         
-        // Set initial connection status
-        const statusElement = document.getElementById('connectionStatus');
-        if (statusElement) {
-            updateConnectionStatus('Connecting...', 'connecting');
-        }
-
         // Initialize filter event listeners
         initializeFilters();
         
-        // Load initial data
-        await loadDashboardData();
+        // Initial data load
+        loadDashboardData();
         
         // Start auto-refresh
-        setInterval(() => {
-            loadDashboardData().catch(error => {
-                console.error('Auto-refresh failed:', error);
-            });
-        }, 300000); // Refresh every 5 minutes
+        setInterval(loadDashboardData, 300000); // Refresh every 5 minutes
         
         console.log('Initialization complete');
     } catch (error) {
@@ -56,59 +44,74 @@ function initializeFilters() {
     // Location filter
     const locationFilter = document.getElementById('locationFilter');
     if (locationFilter) {
-        locationFilter.addEventListener('change', refreshData);
+        locationFilter.addEventListener('change', () => {
+            loadDashboardData({
+                location: locationFilter.value
+            });
+        });
     }
 
     // Time period filter
     const timeFilter = document.getElementById('timeFilter');
     if (timeFilter) {
-        timeFilter.addEventListener('change', refreshData);
+        timeFilter.addEventListener('change', () => {
+            loadDashboardData({
+                days: timeFilter.value
+            });
+        });
     }
 
     // Status filter
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
-        statusFilter.addEventListener('change', refreshData);
+        statusFilter.addEventListener('change', () => {
+            loadDashboardData({
+                status: statusFilter.value
+            });
+        });
     }
 
     // Search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', debounce(refreshData, 300));
+        searchInput.addEventListener('input', debounce((e) => {
+            loadDashboardData({
+                search: e.target.value
+            });
+        }, 300));
     }
 }
 
-async function loadDashboardData() {
-    try {
-        console.log('Fetching dashboard data...');
-        const response = await fetch(SCRIPT_URL);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Received data:', data);
+function loadDashboardData(filters = {}) {
+    console.log('Fetching dashboard data with filters:', filters);
+    
+    google.script.run
+        .withSuccessHandler(handleDataSuccess)
+        .withFailureHandler(handleDataError)
+        .getMaintenanceData(filters);
+}
 
-        // Update global state
-        currentData = {
-            stats: {
-                ...currentData.stats,
-                ...data.stats
-            },
-            reports: data.reports || []
-        };
+function handleDataSuccess(data) {
+    console.log('Received data:', data);
+    
+    // Update global state
+    currentData = {
+        stats: {
+            ...currentData.stats,
+            ...data.stats
+        },
+        reports: data.reports || []
+    };
 
-        // Update UI
-        updateStats(currentData.stats);
-        updateReports(currentData.reports);
-        updateConnectionStatus('Connected', 'connected');
+    // Update UI
+    updateStats(currentData.stats);
+    updateReports(currentData.reports);
+    updateConnectionStatus('Connected', 'connected');
+}
 
-    } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-        updateConnectionStatus('Connection failed', 'error');
-        throw error;
-    }
+function handleDataError(error) {
+    console.error('Failed to load dashboard data:', error);
+    updateConnectionStatus('Connection failed', 'error');
 }
 
 function updateStats(stats) {
@@ -121,8 +124,7 @@ function updateStats(stats) {
     // If stats is null or undefined, keep showing loading state
     if (!stats) return;
 
-    // Create the stats cards HTML
-    const statsHTML = `
+    container.innerHTML = `
         <div class="bg-white rounded-lg shadow p-6">
             <div class="text-gray-500">Total Reports</div>
             <div class="text-3xl font-bold">${stats.total || 0}</div>
@@ -144,9 +146,6 @@ function updateStats(stats) {
             <div class="text-3xl font-bold text-green-500">${stats.complete || 0}</div>
         </div>
     `;
-
-    // Update the container contents
-    container.innerHTML = statsHTML;
 }
 
 function updateReports(reports) {
@@ -164,10 +163,10 @@ function updateReports(reports) {
 
     tbody.innerHTML = reports.map(report => `
         <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4">${report.date || ''}</td>
+            <td class="px-6 py-4">${formatDate(report.date)}</td>
             <td class="px-6 py-4">${report.location || ''}</td>
             <td class="px-6 py-4">${report.equipment || ''}</td>
-            <td class="px-6 py-4">${report.status || ''}</td>
+            <td class="px-6 py-4">${formatStatus(report.status)}</td>
             <td class="px-6 py-4">${generateStatusDropdown(report)}</td>
             <td class="px-6 py-4">${generateMediaButtons(report)}</td>
             <td class="px-6 py-4">
@@ -188,3 +187,57 @@ function updateConnectionStatus(message, status) {
 }
 
 function getStatusClass(status) {
+    switch (status) {
+        case 'connected':
+            return 'text-green-600';
+        case 'error':
+            return 'text-red-600';
+        case 'connecting':
+            return 'text-yellow-600';
+        default:
+            return 'text-gray-600';
+    }
+}
+
+function formatDate(date) {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatStatus(status) {
+    const colors = {
+        'Needs Work': 'red',
+        'Parts On Order': 'indigo',
+        'In Progress': 'yellow',
+        'Complete': 'green'
+    };
+    const color = colors[status] || 'gray';
+    
+    return `
+        <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                     bg-${color}-100 text-${color}-800">
+            ${status}
+        </span>
+    `;
+}
+
+function generateStatusDropdown(report) {
+    const statuses = ['Needs Work', 'Parts On Order', 'In Progress', 'Complete'];
+    return `
+        <select onchange="updateStatus('${report.id}', this.value)" 
+                class="rounded-md border-gray-300 shadow-sm py-1 px-2">
+            ${statuses.map(status => `
+                <option value="${status}" ${report.status === status ? 'selected' : ''}>
+                    ${status}
+                </option>
+            `).join('')}
+        </select>
+    `;
+}
+
+function generateMediaButtons(report) {
+    let buttons = [];
+    if (report.hasPhotos) {
+        buttons.push(`
+            <button onclick="viewMedia('${report.
