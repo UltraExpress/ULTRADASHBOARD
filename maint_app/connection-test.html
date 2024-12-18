@@ -3,86 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets Data Test</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <style>
-        body { font-family: Arial, sans-serif; }
-        #data-table { border-collapse: collapse; width: 100%; }
-        #data-table th, #data-table td { border: 1px solid #ddd; padding: 8px; }
-        #data-table th { background-color: #f4f4f4; }
-    </style>
+    <title>Google Apps Script API Test</title>
 </head>
-<body class="p-8">
-    <div class="max-w-3xl mx-auto">
-        <h1 class="text-2xl font-bold mb-4">Google Sheets Data Test</h1>
-        <button id="load-data" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Load Data</button>
-        <div id="status" class="mt-4"></div>
-        <table id="data-table" class="mt-6 hidden">
-            <thead>
-                <tr id="table-header"></tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
-    </div>
+<body>
+    <h1>Test Google Apps Script API</h1>
+    <button onclick="getAllData()">Get All Data</button>
+    <button onclick="getRowByPartId()">Get Row by Part ID</button>
+    <button onclick="updateCell()">Update Status</button>
+
+    <h2>Response:</h2>
+    <pre id="response"></pre>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxD90iRDcwIyf1atPL-dWYWdeMQwZGyjnQyWmfInN6D8Jq4bS2PvJFK_bfJws7DMlfSyQ/exec';
 
-        document.getElementById('load-data').addEventListener('click', async () => {
-            const statusDiv = document.getElementById('status');
-            const table = document.getElementById('data-table');
-            const tableHeader = document.getElementById('table-header');
-            const tableBody = document.getElementById('table-body');
+        // Get All Data
+        async function getAllData() {
+            try {
+                const response = await fetch(`${API_URL}?action=getAllData`);
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
 
-            statusDiv.textContent = 'Loading data...';
-            table.classList.add('hidden');
-            tableHeader.innerHTML = '';
-            tableBody.innerHTML = '';
+        // Get Row by Part ID
+        async function getRowByPartId() {
+            const partId = prompt('Enter Part ID to fetch (e.g., 19):');
+            try {
+                const response = await fetch(`${API_URL}?action=getRowByPartId&partId=${partId}`);
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Update a Cell
+        async function updateCell() {
+            const partId = prompt('Enter Part ID to update (e.g., 19):');
+            const columnName = prompt('Enter column name (e.g., Status):');
+            const newValue = prompt('Enter new value (e.g., COMPLETE):');
+
+            const payload = {
+                action: 'updateCell',
+                partId: partId,
+                columnName: columnName,
+                newValue: newValue
+            };
 
             try {
-                const response = await fetch(`${API_URL}?action=getStats`);
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    statusDiv.textContent = 'Data loaded successfully!';
-                    table.classList.remove('hidden');
-
-                    // Generate table headers
-                    const headers = Object.keys(result.data.byLocation);
-                    headers.forEach(header => {
-                        const th = document.createElement('th');
-                        th.textContent = header;
-                        tableHeader.appendChild(th);
-                    });
-
-                    // Generate table rows
-                    for (const location in result.data.byLocation) {
-                        const row = document.createElement('tr');
-                        const locationData = result.data.byLocation[location];
-                        const rowData = [
-                            location,
-                            locationData.total,
-                            locationData.needsWork,
-                            locationData.inProgress,
-                            locationData.partsOnOrder,
-                            locationData.complete
-                        ];
-
-                        rowData.forEach(cellData => {
-                            const td = document.createElement('td');
-                            td.textContent = cellData;
-                            row.appendChild(td);
-                        });
-
-                        tableBody.appendChild(row);
-                    }
-                } else {
-                    statusDiv.textContent = `Error: ${result.message}`;
-                }
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
             } catch (error) {
-                statusDiv.textContent = `Failed to load data: ${error.message}`;
+                console.error('Error:', error);
             }
-        });
+        }
     </script>
 </body>
 </html>
