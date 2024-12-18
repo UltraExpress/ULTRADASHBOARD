@@ -386,6 +386,77 @@ async function checkVideoDuration(videoBlob) {
 }    
         
         
+
+
+
+
+// Add this function before your form submission handler
+async function compressVideo(videoBlob) {
+    // Return original if WebCodecs not supported
+    if (!('VideoEncoder' in window)) {
+        console.warn('VideoEncoder not supported - using original video');
+        return videoBlob;
+    }
+
+    try {
+        // Create video element to read the original video
+        const videoElement = document.createElement('video');
+        videoElement.src = URL.createObjectURL(videoBlob);
+        await videoElement.play();
+        videoElement.pause();
+
+        // Canvas to capture frames
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = Math.min(640, videoElement.videoWidth);  // Max width 640px
+        canvas.height = (canvas.width / videoElement.videoWidth) * videoElement.videoHeight;
+
+        // Prepare MediaRecorder
+        const stream = canvas.captureStream();
+        const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'video/webm',
+            videoBitsPerSecond: 1000000  // 1 Mbps
+        });
+
+        // Store compressed chunks
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+        // Start recording
+        mediaRecorder.start();
+
+        // Process each frame
+        const fps = 30;
+        const totalFrames = videoElement.duration * fps;
+        const frameInterval = 1000 / fps;
+
+        for (let i = 0; i < totalFrames; i++) {
+            videoElement.currentTime = i * (1 / fps);
+            await new Promise(resolve => setTimeout(resolve, 10));  // Small delay
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        }
+
+        // Stop and get result
+        mediaRecorder.stop();
+        await new Promise(resolve => {
+            mediaRecorder.onstop = () => {
+                const compressedBlob = new Blob(chunks, { type: 'video/webm' });
+                resolve(compressedBlob);
+            };
+        });
+
+        return chunks[0];  // Return compressed video blob
+    } catch (error) {
+        console.warn('Video compression failed:', error);
+        return videoBlob;  // Fallback to original
+    }
+}
+
+
+
+
+
+
         
 // Form submission handler
 document.getElementById('maintenanceForm').addEventListener('submit', async function(e) {
@@ -408,6 +479,7 @@ document.getElementById('maintenanceForm').addEventListener('submit', async func
 
         // Add the video duration check here
         if (videoBlob) {
+            videoBlob = await compressVideo(videoBlob); 
             const duration = await checkVideoDuration(videoBlob);
             if (duration > 30) {
                 alert('Video must be 30 seconds or less. Please record a shorter video.');
