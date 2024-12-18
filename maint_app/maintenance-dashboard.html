@@ -242,36 +242,49 @@ async function fetchData() {
         
         
         // Update status for a report
-        async function updateStatus(partId, newStatus) {
-            toggleLoading(true);
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'updateCell',
-                        partId: partId,
-                        columnName: 'Status',
-                        newValue: newStatus
-                    })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    fetchData(); // Refresh data
-                } else {
-                    throw new Error('Update failed');
-                }
-            } catch (error) {
-                console.error('Error updating status:', error);
-                alert('Error updating status. Please try again.');
-            }
-            toggleLoading(false);
-        }
+async function updateStatus(partId, newStatus) {
+    toggleLoading(true);
+    try {
+        // Format the request body according to the API documentation
+        const requestBody = JSON.stringify({
+            action: 'updateCell',
+            partId: partId,
+            columnName: 'Status',
+            newValue: newStatus
+        });
 
-       
+// Make the POST request
+const response = await fetch(API_URL + '?action=updateCell&partId=' + partId + '&columnName=Status&newValue=' + newStatus, {
+    method: 'POST',
+    body: requestBody,
+    mode: 'no-cors'
+});
+
+        // Since we're using no-cors, we can't read the response
+        // Instead, we'll refresh the data after a brief delay
+        setTimeout(() => {
+            fetchData(); // Refresh all data to show the update
+        }, 1000);
+
+    } catch (error) {
+        console.error('Error updating status:', error);
+        alert('Error updating status. Please try again.');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+
+
+
+
+
         
+       
+    function sanitizeStatus(status) {
+    // Replace spaces with plus signs and uppercase
+    return status.split(' ').join('+').toUpperCase();
+}    
         
         
         
@@ -403,8 +416,8 @@ function updateTable() {
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
-                                onchange="updateStatus('${report['Part ID']}', this.value)">
+<select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+        onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value))">
                             <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
                             <option ${status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
                             <option ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
