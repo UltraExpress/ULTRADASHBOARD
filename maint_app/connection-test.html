@@ -3,25 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash API Test (POST Only)</title>
+    <title>Ultra Wash API Data Test</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash API Test (POST Only)</h1>
+        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash API Data Test</h1>
         
         <!-- Status Display -->
-        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test connection</div>
+        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test</div>
         
-        <!-- Test Button -->
-        <button onclick="testConnection()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Test Connection
-        </button>
+        <!-- Test Methods -->
+        <div class="space-y-4 mb-6">
+            <button onclick="testWithJsonp()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Test with JSONP
+            </button>
+            <button onclick="testWithFetch()" class="ml-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Test with Fetch
+            </button>
+            <button onclick="testWithScript()" class="ml-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                Test with Script Tag
+            </button>
+        </div>
 
         <!-- Debug Info -->
-        <div class="mb-4 mt-4">
+        <div class="mb-4">
             <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
             <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48"></div>
+        </div>
+
+        <!-- Response Data -->
+        <div>
+            <h2 class="text-lg font-semibold mb-2">Response Data:</h2>
+            <pre id="response" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
         </div>
     </div>
 
@@ -29,48 +43,85 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec';
         const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debugInfo');
+        const responseDiv = document.getElementById('response');
 
         function updateDebug(info) {
             const timestamp = new Date().toISOString();
             debugDiv.innerHTML += `<div class="text-sm mb-1">${timestamp}: ${info}</div>`;
         }
 
-        async function testConnection() {
-            statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
-            statusDiv.textContent = 'Testing connection...';
-            debugDiv.innerHTML = '';
+        function testWithJsonp() {
+            updateDebug('Starting JSONP test');
+            statusDiv.textContent = 'Testing with JSONP...';
+            responseDiv.textContent = '';
+
+            const callbackName = 'callback_' + Date.now();
+            window[callbackName] = function(data) {
+                updateDebug('JSONP callback received');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                statusDiv.textContent = 'JSONP data received!';
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=getStats&callback=${callbackName}`;
+            
+            script.onerror = () => {
+                updateDebug('JSONP script error');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                statusDiv.textContent = 'JSONP failed';
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            document.body.appendChild(script);
+        }
+
+        async function testWithFetch() {
+            updateDebug('Starting Fetch test');
+            statusDiv.textContent = 'Testing with Fetch...';
+            responseDiv.textContent = '';
 
             try {
-                // Create minimal test data
-                const testData = {
-                    action: 'getStats',
-                    timestamp: new Date().toISOString()
-                };
-
-                updateDebug('Sending POST request with no-cors mode');
-                
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                    },
-                    body: JSON.stringify(testData)
-                });
-
-                updateDebug('Request completed');
+                const response = await fetch(`${API_URL}?action=getStats`);
+                updateDebug(`Fetch status: ${response.status}`);
+                const data = await response.text();
+                updateDebug('Fetch data received');
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                statusDiv.textContent = 'Connection test successful';
-                
-                // Note: With no-cors mode, we can't read the response
-                updateDebug('Note: Due to no-cors mode, we cannot read the response data');
-                updateDebug('But if no error occurred, the connection is working');
-
+                statusDiv.textContent = 'Fetch successful!';
+                responseDiv.textContent = data;
             } catch (error) {
-                updateDebug(`Error occurred: ${error.message}`);
+                updateDebug(`Fetch error: ${error.message}`);
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = `Connection failed: ${error.message}`;
+                statusDiv.textContent = 'Fetch failed';
             }
+        }
+
+        function testWithScript() {
+            updateDebug('Starting Script tag test');
+            statusDiv.textContent = 'Testing with Script tag...';
+            responseDiv.textContent = '';
+
+            // Create a global callback
+            window.handleStats = function(data) {
+                updateDebug('Script callback received');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                statusDiv.textContent = 'Script data received!';
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+            };
+
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=getStats&callback=handleStats`;
+            
+            script.onerror = () => {
+                updateDebug('Script load error');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                statusDiv.textContent = 'Script test failed';
+            };
+
+            document.body.appendChild(script);
         }
     </script>
 </body>
