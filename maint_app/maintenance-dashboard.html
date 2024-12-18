@@ -208,10 +208,6 @@ async function fetchData() {
         filteredReports = [];
         alert('Error loading data. Please try again.');
         updateDashboard();
-    } finally {
-        // Always ensure loading is hidden
-        console.log('Forcing loading state to hidden');
-        toggleLoading(false);
     }
 }
 
