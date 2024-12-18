@@ -58,3 +58,10 @@
 .status-loading {
     color: #F59E0B;
 }
+
+/* Table loading state */
+.loading-row td {
+    padding: 2rem;
+    text-align: center;
+    color: #6B7280;
+}
