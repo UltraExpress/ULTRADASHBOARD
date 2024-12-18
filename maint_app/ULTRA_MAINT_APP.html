@@ -370,7 +370,20 @@ window.addEventListener('beforeunload', function(e) {
 
         
         
+    // Add this BEFORE the form submission handler
+async function checkVideoDuration(videoBlob) {
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
         
+        video.onloadedmetadata = function() {
+            window.URL.revokeObjectURL(video.src);
+            resolve(video.duration);
+        };
+        
+        video.src = URL.createObjectURL(videoBlob);
+    });
+}    
         
         
         
@@ -385,6 +398,29 @@ document.getElementById('maintenanceForm').addEventListener('submit', async func
 
     const loading = document.querySelector('.loading');
     loading.style.display = 'block';
+
+
+
+
+
+
+
+
+        // Add the video duration check here
+        if (videoBlob) {
+            const duration = await checkVideoDuration(videoBlob);
+            if (duration > 30) {
+                alert('Video must be 30 seconds or less. Please record a shorter video.');
+                loading.style.display = 'none';
+                isUploading = false;
+                return;
+            }
+        }
+
+  
+
+
+            
     
     // Set upload flag
     isUploading = true;
