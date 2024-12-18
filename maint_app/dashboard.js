@@ -1,138 +1,209 @@
 // Configuration
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy9jocVrp5QvarA8NUbDwUToVxe5SqgihsDjDhgb1ZnKEPfydjC5b1K7blJnS8HiN0_w/exec';
-const REFRESH_INTERVAL = 300000; // 5 minutes
 
 // Global state
 let currentData = {
-    stats: null,
-    reports: [],
-    page: 1,
-    filters: {
-        location: '',
-        timeframe: '7',
-        status: '',
-        search: ''
-    }
+    stats: {
+        total: 0,
+        needsWork: 0,
+        partsOnOrder: 0,
+        inProgress: 0,
+        complete: 0
+    },
+    reports: []
 };
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
-    initializeFilters();
-    loadDashboardData();
-    startAutoRefresh();
+    console.log('Initializing dashboard...');
+    initializeDashboard();
 });
 
-// Data loading functions
+async function initializeDashboard() {
+    try {
+        // Set initial connection status
+        updateConnectionStatus('Connecting...', 'connecting');
+        
+        // Initialize filter event listeners
+        initializeFilters();
+        
+        // Load initial data
+        await loadDashboardData();
+        
+        // Start auto-refresh
+        setInterval(loadDashboardData, 300000); // Refresh every 5 minutes
+        
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        updateConnectionStatus('Connection failed', 'error');
+    }
+}
+
+function initializeFilters() {
+    // Location filter
+    const locationFilter = document.getElementById('locationFilter');
+    if (locationFilter) {
+        locationFilter.addEventListener('change', refreshData);
+    }
+
+    // Time period filter
+    const timeFilter = document.getElementById('timeFilter');
+    if (timeFilter) {
+        timeFilter.addEventListener('change', refreshData);
+    }
+
+    // Status filter
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', refreshData);
+    }
+
+    // Search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(refreshData, 300));
+    }
+}
+
 async function loadDashboardData() {
     try {
-        updateConnectionStatus('Connecting...', 'loading');
-        const stats = await fetchStats();
-        const reports = await fetchReports();
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
         
-        updateStats(stats);
-        updateReports(reports);
-        updateConnectionStatus('Connected', 'success');
+        // Update global state
+        currentData = {
+            ...currentData,
+            ...data
+        };
+
+        // Update UI
+        updateStats(currentData.stats);
+        updateReports(currentData.reports);
+        updateConnectionStatus('Connected', 'connected');
+
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
         updateConnectionStatus('Connection failed', 'error');
     }
 }
 
-async function fetchStats() {
-    const response = await fetch(`${SCRIPT_URL}?action=stats`);
-    return await response.json();
-}
-
-async function fetchReports() {
-    const response = await fetch(`${SCRIPT_URL}?action=reports`);
-    return await response.json();
-}
-
-// Filter initialization
-function initializeFilters() {
-    const filters = ['location', 'time', 'status'];
-    filters.forEach(filter => {
-        document.getElementById(`${filter}Filter`)?.addEventListener('change', handleFilterChange);
-    });
-    
-    document.getElementById('searchInput')?.addEventListener('input', 
-        debounce(handleFilterChange, 300)
-    );
-}
-
-function handleFilterChange(event) {
-    const filterId = event.target.id;
-    currentData.filters[filterId.replace('Filter', '')] = event.target.value;
-    refreshData();
-}
-
-// UI update functions
 function updateStats(stats) {
-    const statsContainer = document.getElementById('statsContainer');
-    if (!statsContainer) return;
+    const container = document.getElementById('statsContainer');
+    if (!container) return;
 
-    statsContainer.innerHTML = generateStatsHTML(stats);
+    container.innerHTML = `
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-gray-500">Total Reports</div>
+            <div class="text-3xl font-bold">${stats.total || 0}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-red-500">Needs Work</div>
+            <div class="text-3xl font-bold text-red-500">${stats.needsWork || 0}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-indigo-500">Parts On Order</div>
+            <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder || 0}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-yellow-500">In Progress</div>
+            <div class="text-3xl font-bold text-yellow-500">${stats.inProgress || 0}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-green-500">Complete</div>
+            <div class="text-3xl font-bold text-green-500">${stats.complete || 0}</div>
+        </div>
+    `;
 }
 
 function updateReports(reports) {
     const tbody = document.getElementById('reportsTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = reports.map(generateReportRowHTML).join('');
+    if (!reports || reports.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                    No reports available
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = reports.map(report => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4">${report.date || ''}</td>
+            <td class="px-6 py-4">${report.location || ''}</td>
+            <td class="px-6 py-4">${report.equipment || ''}</td>
+            <td class="px-6 py-4">${report.status || ''}</td>
+            <td class="px-6 py-4">${generateStatusDropdown(report)}</td>
+            <td class="px-6 py-4">${generateMediaButtons(report)}</td>
+            <td class="px-6 py-4">
+                <button onclick="viewNotes('${report.id}')" class="text-blue-600 hover:text-blue-900">
+                    View Notes
+                </button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 function updateConnectionStatus(message, status) {
-    const statusElement = document.getElementById('connectionStatus');
-    if (!statusElement) return;
-
-    statusElement.textContent = message;
-    statusElement.className = `text-sm status-${status}`;
+    const element = document.getElementById('connectionStatus');
+    if (!element) return;
+    
+    element.textContent = message;
+    element.className = `text-sm ${getStatusClass(status)}`;
 }
 
-// HTML generation helpers
-function generateStatsHTML(stats) {
+function getStatusClass(status) {
+    switch (status) {
+        case 'connected':
+            return 'text-green-600';
+        case 'error':
+            return 'text-red-600';
+        case 'connecting':
+            return 'text-yellow-600';
+        default:
+            return 'text-gray-600';
+    }
+}
+
+function generateStatusDropdown(report) {
+    const statuses = ['Needs Work', 'Parts On Order', 'In Progress', 'Complete'];
     return `
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-gray-500">Total Reports</div>
-            <div class="text-3xl font-bold">${stats.total}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-red-500">Needs Work</div>
-            <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-indigo-500">Parts On Order</div>
-            <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-yellow-500">In Progress</div>
-            <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-green-500">Complete</div>
-            <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
-        </div>
+        <select onchange="updateStatus('${report.id}', this.value)" 
+                class="rounded-md border-gray-300 shadow-sm py-1 px-2">
+            ${statuses.map(status => `
+                <option value="${status}" ${report.status === status ? 'selected' : ''}>
+                    ${status}
+                </option>
+            `).join('')}
+        </select>
     `;
 }
 
-function generateReportRowHTML(report) {
-    return `
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap">${formatDateCell(report)}</td>
-            <td class="px-6 py-4">${report.location}</td>
-            <td class="px-6 py-4">${report.equipment}</td>
-            <td class="px-6 py-4">${formatStatusBadge(report.status)}</td>
-            <td class="px-6 py-4">${createStatusDropdown(report)}</td>
-            <td class="px-6 py-4">${formatMediaButtons(report)}</td>
-            <td class="px-6 py-4">
-                <button onclick="showNotes('${report.id}')" 
-                        class="text-blue-600 hover:text-blue-900">View Notes</button>
-            </td>
-        </tr>
-    `;
+function generateMediaButtons(report) {
+    let buttons = [];
+    if (report.hasPhotos) {
+        buttons.push(`
+            <button onclick="viewMedia('${report.id}', 'photo')" 
+                    class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</button>
+        `);
+    }
+    if (report.hasVideos) {
+        buttons.push(`
+            <button onclick="viewMedia('${report.id}', 'video')" 
+                    class="text-blue-600 hover:text-blue-900">🎥 Video</button>
+        `);
+    }
+    return buttons.join('');
 }
 
-// Utility functions
+function refreshData() {
+    loadDashboardData();
+}
+
+// Utility function for debouncing
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -145,37 +216,18 @@ function debounce(func, wait) {
     };
 }
 
-function startAutoRefresh() {
-    setInterval(loadDashboardData, REFRESH_INTERVAL);
+// Event handler functions
+function viewNotes(id) {
+    console.log('Viewing notes for:', id);
+    // Implement notes viewing functionality
 }
 
-// Modal functions
-function showModal(title, content) {
-    const modal = document.getElementById('modal');
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('modalContent').innerHTML = content;
-    modal.classList.remove('hidden');
+function viewMedia(id, type) {
+    console.log('Viewing media:', type, 'for:', id);
+    // Implement media viewing functionality
 }
 
-function closeModal() {
-    document.getElementById('modal').classList.add('hidden');
-}
-
-// Status update functions
-async function updateStatus(reportId, newStatus) {
-    try {
-        const response = await fetch(`${SCRIPT_URL}?action=updateStatus`, {
-            method: 'POST',
-            body: JSON.stringify({ reportId, status: newStatus })
-        });
-        
-        if (response.ok) {
-            loadDashboardData(); // Refresh data after successful update
-        } else {
-            throw new Error('Failed to update status');
-        }
-    } catch (error) {
-        console.error('Error updating status:', error);
-        alert('Failed to update status. Please try again.');
-    }
+function updateStatus(id, newStatus) {
+    console.log('Updating status:', id, 'to:', newStatus);
+    // Implement status update functionality
 }
