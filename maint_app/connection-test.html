@@ -9,13 +9,12 @@
     <h1>Test Google Apps Script API</h1>
     <button onclick="getAllData()">Get All Data</button>
     <button onclick="getRowByPartId()">Get Row by Part ID</button>
-    <button onclick="updateCell()">Update Status</button>
 
     <h2>Response:</h2>
     <pre id="response"></pre>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyHozvHmlO3XEV4kwCQMjdZDsXbgb38Gop9z0KZ47Vi5uMPr8oeTHshoH2BvnKhHSOEoA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbznsqMOWcnHrSfC8U40Up8yR_OdCE30fQYIeQ_fNV1yjqsj3bTyLRD_o2cYaOWZAtHWXQ/exec';
 
         // Get All Data
         async function getAllData() {
@@ -33,32 +32,6 @@
             const partId = prompt('Enter Part ID to fetch (e.g., 19):');
             try {
                 const response = await fetch(`${API_URL}?action=getRowByPartId&partId=${partId}`);
-                const data = await response.json();
-                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-
-        // Update a Cell
-        async function updateCell() {
-            const partId = prompt('Enter Part ID to update (e.g., 19):');
-            const columnName = prompt('Enter column name (e.g., Status):');
-            const newValue = prompt('Enter new value (e.g., COMPLETE):');
-
-            const payload = {
-                action: 'updateCell',
-                partId: partId,
-                columnName: columnName,
-                newValue: newValue
-            };
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
                 const data = await response.json();
                 document.getElementById('response').textContent = JSON.stringify(data, null, 2);
             } catch (error) {
