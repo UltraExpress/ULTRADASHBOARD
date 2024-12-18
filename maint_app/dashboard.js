@@ -99,52 +99,61 @@ function initializeReportsTable() {
     `;
 }
 
-
-
-
-
-
-
-
+// Modified fetch function to handle CORS properly
 async function fetchDashboardData() {
     loadingOverlay.style.display = 'flex';
     try {
-        console.log('Fetching from:', API_URL);
-        const response = await fetch(`${API_URL}?action=getStats`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
+        // Use JSONP approach to bypass CORS
+        const url = new URL(API_URL);
+        url.searchParams.append('action', 'getStats');
+        url.searchParams.append('callback', 'handleDashboardData');
+        
+        // Create script element
+        const script = document.createElement('script');
+        script.src = url.toString();
+        
+        // Create a promise to handle the JSONP response
+        const dataPromise = new Promise((resolve, reject) => {
+            window.handleDashboardData = (data) => {
+                document.body.removeChild(script);
+                resolve(data);
+            };
+            script.onerror = () => {
+                document.body.removeChild(script);
+                reject(new Error('Failed to fetch dashboard data'));
+            };
         });
-        console.log('Response:', response);
-        const data = await response.json();
-        console.log('Data:', data);
+        
+        // Add script to document
+        document.body.appendChild(script);
+        
+        // Wait for data
+        const data = await dataPromise;
         updateDashboard(data);
     } catch (error) {
-        console.error('Detailed error:', error);
+        console.error('Error fetching dashboard data:', error);
         alert('Error loading dashboard data. Please try again.');
     } finally {
         loadingOverlay.style.display = 'none';
     }
 }
 
-
-
-
-
-
-
 function updateDashboard(data) {
-    updateStats(data);
-    updateReportsTable(data.reports || []);
+    if (data.status === 'success') {
+        updateStats(data.data);
+        updateReportsTable(data.data.reports || []);
+    } else {
+        console.error('Error in dashboard data:', data);
+        alert('Error updating dashboard. Please check console for details.');
+    }
 }
 
-function updateStats(data) {
-    document.getElementById('totalReports').textContent = data.total || 0;
-    document.getElementById('needsWorkCount').textContent = data.needsWork || 0;
-    document.getElementById('partsOrderCount').textContent = data.partsOnOrder || 0;
-    document.getElementById('inProgressCount').textContent = data.inProgress || 0;
-    document.getElementById('completeCount').textContent = data.complete || 0;
+function updateStats(stats) {
+    document.getElementById('totalReports').textContent = stats.total || 0;
+    document.getElementById('needsWorkCount').textContent = stats.needsWork || 0;
+    document.getElementById('partsOrderCount').textContent = stats.partsOnOrder || 0;
+    document.getElementById('inProgressCount').textContent = stats.inProgress || 0;
+    document.getElementById('completeCount').textContent = stats.complete || 0;
 }
 
 function updateReportsTable(reports) {
