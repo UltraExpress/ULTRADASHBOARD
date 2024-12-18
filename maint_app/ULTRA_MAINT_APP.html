@@ -413,6 +413,23 @@ document.getElementById('maintenanceForm').addEventListener('submit', async func
             formData.append('video', videoBase64);
         }
 
+
+
+
+
+// Add these logs right before the fetch call, after all formData.append() lines:
+console.log("Form Data Contents:");
+for (let pair of formData.entries()) {
+    console.log(pair[0] + ': ' + (pair[0] === 'photo' || pair[0] === 'video' ? 'DATA_PRESENT' : pair[1]));
+    if (pair[0] === 'photo' || pair[0] === 'video') {
+        console.log(`${pair[0]} data length:`, pair[1].length);
+    }
+}
+console.log("Attempting fetch...");
+
+
+
+        
         // Send to Google Apps Script
         await fetch('https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec', {
             method: 'POST',
