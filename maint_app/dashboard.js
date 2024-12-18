@@ -113,32 +113,28 @@ function initializeReportsTable() {
 async function fetchDashboardData() {
     loadingOverlay.style.display = 'flex';
     try {
-        // Use JSONP approach to bypass CORS
-        const url = new URL(API_URL);
-        url.searchParams.append('action', 'getStats');
-        url.searchParams.append('callback', 'handleDashboardData');
-        
-        // Create script element
-        const script = document.createElement('script');
-        script.src = url.toString();
-        
-        // Create a promise to handle the JSONP response
-        const dataPromise = new Promise((resolve, reject) => {
-            window.handleDashboardData = (data) => {
-                document.body.removeChild(script);
-                resolve(data);
-            };
-            script.onerror = () => {
-                document.body.removeChild(script);
-                reject(new Error('Failed to fetch dashboard data'));
-            };
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain',
+            },
+            body: JSON.stringify({
+                action: 'getStats'
+            })
         });
         
-        // Add script to document
-        document.body.appendChild(script);
+        // Since we can't read the response with no-cors,
+        // we need to do a second request to actually get the data
+        const dataResponse = await fetch(API_URL + '?action=getStats', {
+            method: 'GET'
+        });
         
-        // Wait for data
-        const data = await dataPromise;
+        if (!dataResponse.ok) {
+            throw new Error('Failed to fetch dashboard data');
+        }
+        
+        const data = await dataResponse.json();
         updateDashboard(data);
     } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -147,7 +143,6 @@ async function fetchDashboardData() {
         loadingOverlay.style.display = 'none';
     }
 }
-
 
 
 
