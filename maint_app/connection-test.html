@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>Status Update Test</title>
+    <style>
+        .button-row { margin: 10px 0; }
+    </style>
 </head>
 <body>
     <h2>Status Update Test</h2>
@@ -14,7 +17,10 @@
             <option>In Progress</option>
             <option>Complete</option>
         </select>
-        <button onclick="updateStatus()">Update Status</button>
+        <div class="button-row">
+            <button onclick="updateStatusMethod1()">Update Method 1 (URL Params)</button>
+            <button onclick="updateStatusMethod2()">Update Method 2 (Form Submit)</button>
+        </div>
     </div>
 
     <div id="result" style="margin-top: 20px;"></div>
@@ -26,42 +32,55 @@
             return status.split(' ').join('+').toUpperCase();
         }
 
-        async function updateStatus() {
+        // Method 1: Using URL Parameters
+        async function updateStatusMethod1() {
             const status = document.getElementById('statusSelect').value;
             const sanitizedStatus = sanitizeStatus(status);
             const resultDiv = document.getElementById('result');
-            resultDiv.textContent = 'Updating...';
+            resultDiv.textContent = 'Updating using Method 1...';
 
             try {
-                // Making a form data request instead of JSON
-                const formData = new FormData();
-                formData.append('action', 'updateCell');
-                formData.append('partId', '6');
-                formData.append('columnName', 'Status');
-                formData.append('newValue', sanitizedStatus);
-
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',  // Add this for CORS
-                    body: formData
-                });
-
-                // Since we're using no-cors, we won't get a readable response
-                resultDiv.textContent = 'Update sent. Check Google Sheet for changes.';
+                const url = `${API_URL}?action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`;
                 
-                // Verify the update after a delay
-                setTimeout(async () => {
-                    try {
-                        const verifyResponse = await fetch(`${API_URL}?action=getAllData`);
-                        const data = await verifyResponse.json();
-                        resultDiv.textContent += '\nVerification Data: ' + JSON.stringify(data);
-                    } catch (verifyError) {
-                        resultDiv.textContent += '\nVerification Error: ' + verifyError.message;
-                    }
-                }, 2000);
+                // Create a hidden form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = url;
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
 
+                resultDiv.textContent = 'Update request sent via Method 1. Check sheet in a moment.';
             } catch (error) {
-                resultDiv.textContent = 'Error: ' + error.message;
+                resultDiv.textContent = 'Error Method 1: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        // Method 2: Using XMLHttpRequest
+        async function updateStatusMethod2() {
+            const status = document.getElementById('statusSelect').value;
+            const sanitizedStatus = sanitizeStatus(status);
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Updating using Method 2...';
+
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', API_URL);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                
+                const data = `action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`;
+                xhr.send(data);
+
+                xhr.onload = function() {
+                    resultDiv.textContent = 'Update request sent via Method 2. Check sheet in a moment.';
+                };
+                
+                xhr.onerror = function() {
+                    resultDiv.textContent = 'Error Method 2: Failed to send request';
+                };
+            } catch (error) {
+                resultDiv.textContent = 'Error Method 2: ' + error.message;
                 console.error(error);
             }
         }
