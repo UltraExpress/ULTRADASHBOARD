@@ -3,15 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTRA WASH Admin Dashboard</title>
-    <!-- Tailwind CSS via CDN -->
+    <title>ULTRA WASH Maintenance Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <!-- Custom styles -->
-    <link href="styles.css" rel="stylesheet">
-    <!-- Google Apps Script API -->
-    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <style>
+        .date-urgent {
+            background-color: #FF4444;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+        .days-badge {
+            background: #CC0000;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        .status-dropdown {
+            max-width: 200px;
+        }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading hidden">
+        <div class="loading-spinner"></div>
+    </div>
+
     <div class="min-h-screen">
         <!-- Header -->
         <nav class="bg-white shadow-lg">
@@ -19,9 +63,6 @@
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <h1 class="text-2xl font-bold text-blue-600">ULTRA WASH Maintenance Reports</h1>
-                    </div>
-                    <div class="flex items-center">
-                        <span id="connectionStatus" class="text-sm text-gray-500">Connecting...</span>
                     </div>
                 </div>
             </div>
@@ -31,51 +72,42 @@
         <div class="max-w-7xl mx-auto px-4 py-6">
             <!-- Stats Overview -->
             <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-                <!-- Loading states for all 5 cards -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="text-gray-500 animate-pulse h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                    <div class="text-3xl font-bold animate-pulse h-8 bg-gray-200 rounded w-16"></div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="text-gray-500 animate-pulse h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                    <div class="text-3xl font-bold animate-pulse h-8 bg-gray-200 rounded w-16"></div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="text-gray-500 animate-pulse h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                    <div class="text-3xl font-bold animate-pulse h-8 bg-gray-200 rounded w-16"></div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="text-gray-500 animate-pulse h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                    <div class="text-3xl font-bold animate-pulse h-8 bg-gray-200 rounded w-16"></div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="text-gray-500 animate-pulse h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                    <div class="text-3xl font-bold animate-pulse h-8 bg-gray-200 rounded w-16"></div>
-                </div>
+                <!-- Stats cards will be inserted here -->
             </div>
 
             <!-- Filters -->
             <div class="bg-white rounded-lg shadow p-4 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <select id="locationFilter" class="rounded-md border-gray-300 shadow-sm">
-                        <option value="">All Locations</option>
-                        <option value="Riverside">Riverside</option>
-                        <option value="Santa Ana">Santa Ana</option>
-                    </select>
-                    <select id="timeFilter" class="rounded-md border-gray-300 shadow-sm">
-                        <option value="7">Last 7 Days</option>
-                        <option value="30">Last 30 Days</option>
-                    </select>
-                    <select id="statusFilter" class="rounded-md border-gray-300 shadow-sm">
-                        <option value="">All Statuses</option>
-                        <option value="needsWork">Needs Work</option>
-                        <option value="partsOnOrder">Parts On Order</option>
-                        <option value="inProgress">In Progress</option>
-                        <option value="complete">Complete</option>
-                    </select>
-                    <input type="text" id="searchInput" 
-                           class="rounded-md border-gray-300 shadow-sm" 
-                           placeholder="Search equipment...">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Location</label>
+                        <select id="locationFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">All Locations</option>
+                            <option>Riverside</option>
+                            <option>Santa Ana</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Time Period</label>
+                        <select id="timeFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="statusFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">All Statuses</option>
+                            <option>Needs Work</option>
+                            <option>Parts On Order</option>
+                            <option>In Progress</option>
+                            <option>Complete</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Search Equipment</label>
+                        <input type="text" id="equipmentSearch" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
+                               placeholder="Search by part/equipment...">
+                    </div>
                 </div>
             </div>
 
@@ -84,39 +116,304 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Equipment</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Update</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Media</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipment</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Update Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                         </tr>
                     </thead>
                     <tbody id="reportsTableBody" class="divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                                Loading reports...
-                            </td>
-                        </tr>
+                        <!-- Reports will be inserted here -->
                     </tbody>
                 </table>
+
+                <!-- Pagination -->
+                <div class="bg-white px-4 py-3 border-t border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-700" id="paginationText">
+                                Loading results...
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="prevPage" class="px-4 py-2 border rounded text-sm bg-gray-50">Previous</button>
+                            <button id="nextPage" class="px-4 py-2 border rounded text-sm bg-gray-50">Next</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal for Notes/Media -->
-    <div id="modal" class="hidden fixed inset-0 modal-backdrop items-center justify-center">
-        <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 id="modalTitle" class="text-lg font-bold">Details</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">✕</button>
-            </div>
-            <div id="modalContent"></div>
-        </div>
-    </div>
+    <script>
+        // Configuration
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzL9ffrICvYzdGEnDoj_DV2zoJZQC2wPigydwaG4MZLwAboOwPGBC3BJFsVFn8qt8x0Ww/exec';
+        const ITEMS_PER_PAGE = 10;
+        let currentPage = 1;
+        let allReports = [];
+        let filteredReports = [];
 
-    <!-- Scripts -->
-    <script src="dashboard.js"></script>
+        // Show/hide loading overlay
+        function toggleLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+        }
+
+        // Fetch all data from the API
+        async function fetchData() {
+            toggleLoading(true);
+            try {
+                const response = await fetch(`${API_URL}?action=getAllData`);
+                const data = await response.json();
+                allReports = data;
+                filteredReports = [...allReports];
+                updateDashboard();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Error loading data. Please try again.');
+            }
+            toggleLoading(false);
+        }
+
+        // Update status for a report
+        async function updateStatus(partId, newStatus) {
+            toggleLoading(true);
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'updateCell',
+                        partId: partId,
+                        columnName: 'Status',
+                        newValue: newStatus
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    fetchData(); // Refresh data
+                } else {
+                    throw new Error('Update failed');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('Error updating status. Please try again.');
+            }
+            toggleLoading(false);
+        }
+
+        // Update stats cards
+        function updateStats() {
+            const stats = {
+                total: filteredReports.length,
+                needsWork: filteredReports.filter(r => r.Status === 'Needs Work').length,
+                partsOnOrder: filteredReports.filter(r => r.Status === 'Parts On Order').length,
+                inProgress: filteredReports.filter(r => r.Status === 'In Progress').length,
+                complete: filteredReports.filter(r => r.Status === 'Complete').length
+            };
+
+            document.getElementById('statsContainer').innerHTML = `
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="text-gray-500">Total Reports</div>
+                    <div class="text-3xl font-bold">${stats.total}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="text-red-500">Needs Work</div>
+                    <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="text-indigo-500">Parts On Order</div>
+                    <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="text-yellow-500">In Progress</div>
+                    <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="text-green-500">Complete</div>
+                    <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
+                </div>
+            `;
+        }
+
+        // Get status styling
+        function getStatusStyle(status) {
+            const styles = {
+                'Needs Work': 'bg-red-100 text-red-800',
+                'Parts On Order': 'bg-indigo-100 text-indigo-800',
+                'In Progress': 'bg-yellow-100 text-yellow-800',
+                'Complete': 'bg-green-100 text-green-800'
+            };
+            return styles[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Calculate date styling and badges
+        function getDateDisplay(timestamp) {
+            const date = moment(timestamp);
+            const daysSinceUpdate = moment().diff(date, 'days');
+            const dateStr = date.format('MMM D, h:mm A');
+
+            if (daysSinceUpdate >= 3) {
+                return `
+                    <div class="date-urgent p-2 rounded">
+                        <div class="text-sm">${dateStr}</div>
+                        <div class="text-xs">No updates<span class="days-badge">${daysSinceUpdate}+ days</span></div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="p-2">
+                        <div class="text-sm">${dateStr}</div>
+                        <div class="text-xs text-gray-500">Updated ${daysSinceUpdate === 0 ? 'today' : daysSinceUpdate + ' days ago'}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Update table with filtered and paginated data
+        function updateTable() {
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pageReports = filteredReports.slice(start, end);
+
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = pageReports.map(report => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${getDateDisplay(report.Timestamp)}
+                    </td>
+                    <td class="px-6 py-4">${report.Location}</td>
+                    <td class="px-6 py-4">${report.Equipment}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(report.Status)}">
+                            ${report.Status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+                                onchange="updateStatus('${report.PartId}', this.value)">
+                            <option ${report.Status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
+                            <option ${report.Status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
+                            <option ${report.Status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option ${report.Status === 'Complete' ? 'selected' : ''}>Complete</option>
+                        </select>
+                    </td>
+                    <td class="px-6 py-4">
+                        ${report.MediaUrls ? `
+                            <button class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</button>
+                            ${report.MediaUrls.includes('video') ? `
+                                <button class="text-blue-600 hover:text-blue-900">🎥 Video</button>
+                            ` : ''}
+                        ` : 'No media'}
+                    </td>
+                    <td class="px-6 py-4">
+                        ${report.Notes ? `
+                            <button class="text-blue-600 hover:text-blue-900">View Notes</button>
+                        ` : 'No notes'}
+                    </td>
+                </tr>
+            `).join('');
+
+            // Update pagination text
+            document.getElementById('paginationText').textContent = 
+                `Showing ${start + 1} to ${Math.min(end, filteredReports.length)} of ${filteredReports.length} results`;
+
+            // Update pagination buttons
+            document.getElementById('prevPage').disabled = currentPage === 1;
+
+
+
+
+
+        document.getElementById('nextPage').disabled = end >= filteredReports.length;
+        }
+
+        // Apply filters to the data
+        function applyFilters() {
+            const location = document.getElementById('locationFilter').value;
+            const timeFrame = parseInt(document.getElementById('timeFilter').value);
+            const status = document.getElementById('statusFilter').value;
+            const equipment = document.getElementById('equipmentSearch').value.toLowerCase();
+            const cutoffDate = moment().subtract(timeFrame, 'days');
+
+            filteredReports = allReports.filter(report => {
+                const matchesLocation = !location || report.Location === location;
+                const matchesTime = moment(report.Timestamp).isAfter(cutoffDate);
+                const matchesStatus = !status || report.Status === status;
+                const matchesEquipment = !equipment || 
+                    report.Equipment.toLowerCase().includes(equipment);
+
+                return matchesLocation && matchesTime && matchesStatus && matchesEquipment;
+            });
+
+            currentPage = 1; // Reset to first page when filtering
+            updateDashboard();
+        }
+
+        // Update the entire dashboard
+        function updateDashboard() {
+            updateStats();
+            updateTable();
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial data load
+            fetchData();
+
+            // Filter change handlers
+            document.getElementById('locationFilter').addEventListener('change', applyFilters);
+            document.getElementById('timeFilter').addEventListener('change', applyFilters);
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+            document.getElementById('equipmentSearch').addEventListener('input', debounce(applyFilters, 300));
+
+            // Pagination handlers
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTable();
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', () => {
+                const maxPage = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
+                if (currentPage < maxPage) {
+                    currentPage++;
+                    updateTable();
+                }
+            });
+        });
+
+        // Utility function for debouncing
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Error handling wrapper for fetch
+        async function safeFetch(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('API request failed:', error);
+                throw error;
+            }
+        }
+    </script>
 </body>
 </html>
