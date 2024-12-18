@@ -3,133 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash Connection Test</title>
+    <title>Google Sheets Data Test</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #data-table { border-collapse: collapse; width: 100%; }
+        #data-table th, #data-table td { border: 1px solid #ddd; padding: 8px; }
+        #data-table th { background-color: #f4f4f4; }
+    </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash Connection Test</h1>
-        
-        <!-- API URL Input -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Google Apps Script URL:</label>
-            <input type="text" id="apiUrl" class="w-full p-2 border rounded" 
-                value="https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec">
-        </div>
-
-        <!-- Test Buttons -->
-        <div class="space-x-4 mb-6">
-            <button onclick="testConnection()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Test Connection
-            </button>
-            <button onclick="fetchStats()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                Fetch Stats
-            </button>
-            <button onclick="fetchReports()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
-                Fetch Reports
-            </button>
-        </div>
-
-        <!-- Status Display -->
-        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test</div>
-
-        <!-- Debug Info -->
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
-            <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48 text-sm font-mono"></div>
-        </div>
-
-        <!-- Response Data -->
-        <div>
-            <h2 class="text-lg font-semibold mb-2">Response Data:</h2>
-            <pre id="responseData" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96 text-sm"></pre>
-        </div>
+<body class="p-8">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-2xl font-bold mb-4">Google Sheets Data Test</h1>
+        <button id="load-data" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Load Data</button>
+        <div id="status" class="mt-4"></div>
+        <table id="data-table" class="mt-6 hidden">
+            <thead>
+                <tr id="table-header"></tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
     </div>
 
     <script>
-        const debugDiv = document.getElementById('debugInfo');
-        const responseDiv = document.getElementById('responseData');
-        const statusDiv = document.getElementById('status');
+        const API_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 
-        function updateDebug(info) {
-            const timestamp = new Date().toISOString();
-            debugDiv.innerHTML += `<div class="mb-1">${timestamp}: ${info}</div>`;
-            debugDiv.scrollTop = debugDiv.scrollHeight;
-        }
+        document.getElementById('load-data').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('status');
+            const table = document.getElementById('data-table');
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
 
-        function updateStatus(message, type = 'info') {
-            const colors = {
-                info: 'bg-yellow-100 text-yellow-700',
-                success: 'bg-green-100 text-green-700',
-                error: 'bg-red-100 text-red-700'
-            };
-            statusDiv.className = `mb-4 p-4 rounded-lg ${colors[type]}`;
-            statusDiv.textContent = message;
-        }
+            statusDiv.textContent = 'Loading data...';
+            table.classList.add('hidden');
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
 
-        async function makeRequest(action) {
-            const apiUrl = document.getElementById('apiUrl').value;
-            updateDebug(`Making ${action} request to: ${apiUrl}`);
-            
             try {
-                const response = await fetch(`${apiUrl}?action=${action}&t=${Date.now()}`, {
-                    method: 'GET',
-                    mode: 'cors'
-                });
+                const response = await fetch(`${API_URL}?action=getStats`);
+                const result = await response.json();
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (result.status === 'success') {
+                    statusDiv.textContent = 'Data loaded successfully!';
+                    table.classList.remove('hidden');
+
+                    // Generate table headers
+                    const headers = Object.keys(result.data.byLocation);
+                    headers.forEach(header => {
+                        const th = document.createElement('th');
+                        th.textContent = header;
+                        tableHeader.appendChild(th);
+                    });
+
+                    // Generate table rows
+                    for (const location in result.data.byLocation) {
+                        const row = document.createElement('tr');
+                        const locationData = result.data.byLocation[location];
+                        const rowData = [
+                            location,
+                            locationData.total,
+                            locationData.needsWork,
+                            locationData.inProgress,
+                            locationData.partsOnOrder,
+                            locationData.complete
+                        ];
+
+                        rowData.forEach(cellData => {
+                            const td = document.createElement('td');
+                            td.textContent = cellData;
+                            row.appendChild(td);
+                        });
+
+                        tableBody.appendChild(row);
+                    }
+                } else {
+                    statusDiv.textContent = `Error: ${result.message}`;
                 }
-
-                const data = await response.json();
-                responseDiv.textContent = JSON.stringify(data, null, 2);
-                return data;
-
             } catch (error) {
-                updateDebug(`Error: ${error.message}`);
-                responseDiv.textContent = '';
-                throw error;
+                statusDiv.textContent = `Failed to load data: ${error.message}`;
             }
-        }
-
-        async function testConnection() {
-            updateDebug('Starting connection test');
-            updateStatus('Testing connection...', 'info');
-            
-            try {
-                const data = await makeRequest('test');
-                updateStatus('Connection successful!', 'success');
-                updateDebug('Connection test completed successfully');
-            } catch (error) {
-                updateStatus('Connection failed', 'error');
-            }
-        }
-
-        async function fetchStats() {
-            updateDebug('Starting stats fetch');
-            updateStatus('Fetching stats...', 'info');
-            
-            try {
-                const data = await makeRequest('getStats');
-                updateStatus('Stats received successfully!', 'success');
-                updateDebug('Stats fetch completed successfully');
-            } catch (error) {
-                updateStatus('Failed to fetch stats', 'error');
-            }
-        }
-
-        async function fetchReports() {
-            updateDebug('Starting reports fetch');
-            updateStatus('Fetching reports...', 'info');
-            
-            try {
-                const data = await makeRequest('getReports');
-                updateStatus('Reports received successfully!', 'success');
-                updateDebug('Reports fetch completed successfully');
-            } catch (error) {
-                updateStatus('Failed to fetch reports', 'error');
-            }
-        }
+        });
     </script>
 </body>
 </html>
