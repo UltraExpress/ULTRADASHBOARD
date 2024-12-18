@@ -34,9 +34,6 @@
             <h2 class="text-lg font-semibold mb-2">Stats Data:</h2>
             <pre id="statsData" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
         </div>
-
-        <!-- Hidden iframe for data fetching -->
-        <iframe id="dataFrame" style="display: none;"></iframe>
     </div>
 
     <script>
@@ -44,22 +41,10 @@
         const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debugInfo');
         const statsDiv = document.getElementById('statsData');
-        const dataFrame = document.getElementById('dataFrame');
 
         function updateDebug(info) {
             debugDiv.innerHTML += `<div class="text-sm mb-1">${new Date().toISOString()}: ${info}</div>`;
         }
-
-        // Handle messages from iframe
-        window.addEventListener('message', function(event) {
-            if (event.origin.includes('script.google.com')) {
-                updateDebug('Received data from Google Apps Script');
-                const data = event.data;
-                statsDiv.textContent = JSON.stringify(data, null, 2);
-                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                statusDiv.textContent = 'Stats received successfully!';
-            }
-        });
 
         async function testConnection() {
             updateDebug('Starting connection test');
@@ -90,16 +75,52 @@
             }
         }
 
-        function fetchStats() {
+        async function fetchStats() {
             updateDebug('Starting stats fetch');
             statusDiv.textContent = 'Fetching stats...';
             statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
             statsDiv.textContent = '';
 
-            // Load URL in iframe
-            const url = `${API_URL}?action=getStats&t=${Date.now()}`;
-            updateDebug(`Loading URL: ${url}`);
-            dataFrame.src = url;
+            try {
+                const url = `${API_URL}?action=getStats&t=${Date.now()}`;
+                updateDebug(`Making request to: ${url}`);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        updateDebug('Received response');
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                            statusDiv.textContent = 'Stats received successfully!';
+                            statsDiv.textContent = JSON.stringify(data, null, 2);
+                        } catch (error) {
+                            updateDebug(`Error parsing response: ${error.message}`);
+                            statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                            statusDiv.textContent = 'Failed to parse stats';
+                        }
+                    } else {
+                        updateDebug(`Request failed with status: ${xhr.status}`);
+                        statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                        statusDiv.textContent = 'Failed to load stats';
+                    }
+                };
+
+                xhr.onerror = function() {
+                    updateDebug('Request failed');
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                    statusDiv.textContent = 'Failed to load stats';
+                };
+
+                xhr.send();
+
+            } catch (error) {
+                updateDebug(`Error: ${error.message}`);
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                statusDiv.textContent = 'Failed to load stats';
+            }
         }
     </script>
 </body>
