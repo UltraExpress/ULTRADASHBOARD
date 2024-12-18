@@ -9,13 +9,13 @@
     <h1>Test Google Apps Script API</h1>
     <button onclick="getAllData()">Get All Data</button>
     <button onclick="getRowByPartId()">Get Row by Part ID</button>
-    <button onclick="updateCell()">Update Status</button> <!-- Re-added Button -->
+    <button onclick="updateStatus()">Update Status</button>
 
     <h2>Response:</h2>
     <pre id="response"></pre>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyOuJBcffIvAM6erCs1OyhYQpa8KC_wkmGp17Rbwr1D20trmXD4jmAFz5ou4eL3lFgMeA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbz29R_Sg4RYDFNYk1xsjEE79NZmkNZPQzDtxBExyTNRV-tyS1KBRy823YFrGuiuxP4r/exec'; // Replace with the deployment URL
 
         // Get All Data
         async function getAllData() {
@@ -30,7 +30,7 @@
 
         // Get Row by Part ID
         async function getRowByPartId() {
-            const partId = prompt('Enter Part ID to fetch (e.g., 6):');
+            const partId = prompt('Enter Part ID to fetch (e.g., 19):');
             try {
                 const response = await fetch(`${API_URL}?action=getRowByPartId&partId=${partId}`);
                 const data = await response.json();
@@ -40,11 +40,11 @@
             }
         }
 
-        // Update a Cell (Update Status)
-        async function updateCell() {
-            const partId = prompt('Enter Part ID to update (e.g., 6):');
+        // Update Status
+        async function updateStatus() {
+            const partId = prompt('Enter Part ID to update:');
             const columnName = prompt('Enter column name (e.g., Status):');
-            const newValue = prompt('Enter new value (e.g., COMPLETE):');
+            const newValue = prompt('Enter new value:');
 
             const payload = {
                 action: 'updateCell',
@@ -68,22 +68,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
