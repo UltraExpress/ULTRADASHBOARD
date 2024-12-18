@@ -1,5 +1,5 @@
 // Constants
-const API_URL = 'YOUR_APPS_SCRIPT_URL';
+const API_URL = 'https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec';
 const LOCATIONS = ['RIVERSIDE', 'SANTA ANA'];
 const STATUSES = ['NEEDS WORK', 'PARTS ON ORDER', 'IN PROGRESS', 'COMPLETE'];
 
@@ -87,7 +87,7 @@ const DashboardFilters = ({ filters, onFilterChange }) => (
     </div>
 );
 
-const ReportsTable = ({ reports }) => (
+const ReportsTable = ({ reports, onStatusUpdate }) => (
     <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="dashboard-table">
             <thead>
@@ -126,7 +126,7 @@ const ReportsTable = ({ reports }) => (
                             <select 
                                 className={`w-full rounded-md border-gray-300 shadow-sm py-2 status-${report.status.toLowerCase().replace(' ', '-')}`}
                                 value={report.status}
-                                onChange={(e) => handleStatusUpdate(report.id, e.target.value)}
+                                onChange={(e) => onStatusUpdate(report.id, e.target.value)}
                             >
                                 {STATUSES.map(status => (
                                     <option key={status} value={status}>{status}</option>
@@ -173,13 +173,23 @@ const Dashboard = () => {
     // Fetch dashboard data
     const fetchDashboardData = async () => {
         setLoading(true);
+        console.log('Fetching dashboard data...');
         try {
-            const response = await fetch(`${API_URL}?action=getStats`);
-            if (!response.ok) throw new Error('Failed to fetch dashboard data');
+            const response = await fetch(`${API_URL}?action=getStats`, {
+                method: 'GET',
+                mode: 'no-cors', // Important for Google Apps Script
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log('Raw response:', response);
             const data = await response.json();
+            console.log('Parsed data:', data);
+            
             if (data.status === 'success') {
                 setStats(data.data);
                 setReports(data.reports || []);
+                console.log('Updated state with:', { stats: data.data, reports: data.reports });
             } else {
                 throw new Error(data.message || 'Failed to load dashboard data');
             }
@@ -193,6 +203,7 @@ const Dashboard = () => {
 
     // Handle filter changes
     const handleFilterChange = (filterName, value) => {
+        console.log('Filter changed:', filterName, value);
         setFilters(prev => ({
             ...prev,
             [filterName]: value
@@ -201,11 +212,17 @@ const Dashboard = () => {
 
     // Handle status updates
     const handleStatusUpdate = async (reportId, newStatus) => {
+        console.log('Updating status:', { reportId, newStatus });
         try {
             const response = await fetch(`${API_URL}?action=updateStatus`, {
                 method: 'POST',
+                mode: 'no-cors', // Important for Google Apps Script
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({ reportId, status: newStatus })
             });
+            console.log('Status update response:', response);
             if (!response.ok) throw new Error('Failed to update status');
             await fetchDashboardData(); // Refresh data
         } catch (err) {
@@ -248,7 +265,10 @@ const Dashboard = () => {
             <main className="max-w-7xl mx-auto px-4 py-6">
                 <StatsOverview stats={stats} />
                 <DashboardFilters filters={filters} onFilterChange={handleFilterChange} />
-                <ReportsTable reports={reports} />
+                <ReportsTable 
+                    reports={reports} 
+                    onStatusUpdate={handleStatusUpdate}
+                />
             </main>
         </div>
     );
