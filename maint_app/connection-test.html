@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash Stats Test</title>
+    <title>Ultra Wash Stats Test (IFrame)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
@@ -29,6 +29,9 @@
             <h2 class="text-lg font-semibold mb-2">Response Data:</h2>
             <pre id="response" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
         </div>
+
+        <!-- Hidden iframe for data fetching -->
+        <iframe id="dataFrame" style="display: none;"></iframe>
     </div>
 
     <script>
@@ -36,10 +39,28 @@
         const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debugInfo');
         const responseDiv = document.getElementById('response');
+        const dataFrame = document.getElementById('dataFrame');
 
         function updateDebug(info) {
             debugDiv.innerHTML += `<div class="text-sm mb-1">${new Date().toISOString()}: ${info}</div>`;
         }
+
+        // Message handler for iframe communication
+        window.addEventListener('message', function(event) {
+            if (event.origin === 'https://script.google.com') {
+                updateDebug('Received data from iframe');
+                try {
+                    const data = JSON.parse(event.data);
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                    statusDiv.textContent = 'Data received successfully!';
+                    responseDiv.textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    updateDebug(`Error parsing response: ${error.message}`);
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                    statusDiv.textContent = 'Failed to parse data';
+                }
+            }
+        });
 
         function testStats() {
             updateDebug('Starting stats test');
@@ -47,40 +68,18 @@
             statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
             responseDiv.textContent = '';
 
-            const callbackName = 'callback_' + Date.now();
+            const url = `${API_URL}?action=getStats&output=embed&_=${Date.now()}`;
+            updateDebug(`Loading URL in iframe: ${url}`);
             
-            // Create global callback
-            window[callbackName] = function(data) {
-                updateDebug('Received response');
-                try {
-                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                    statusDiv.textContent = 'Data received successfully!';
-                    responseDiv.textContent = JSON.stringify(data, null, 2);
-                } catch (error) {
-                    updateDebug(`Error parsing response: ${error.message}`);
-                }
-                // Cleanup
-                document.body.removeChild(script);
-                delete window[callbackName];
-            };
-
-            // Create script element
-            const script = document.createElement('script');
-            const url = `${API_URL}?action=getStats&callback=${callbackName}&_=${Date.now()}`;
-            updateDebug(`Requesting URL: ${url}`);
-            script.src = url;
-            
-            script.onerror = function(error) {
-                updateDebug(`Script error: ${error.type}`);
+            // Set up load error handler
+            dataFrame.onerror = function() {
+                updateDebug('iframe load error');
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
                 statusDiv.textContent = 'Failed to load data';
-                document.body.removeChild(script);
-                delete window[callbackName];
             };
 
-            // Add script to page
-            updateDebug('Adding script to document');
-            document.body.appendChild(script);
+            // Load the URL in the iframe
+            dataFrame.src = url;
         }
     </script>
 </body>
