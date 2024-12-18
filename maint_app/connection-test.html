@@ -3,63 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash API Connection Test</title>
+    <title>Ultra Wash API Debug Test</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash API Connection Test</h1>
+        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash API Debug Test</h1>
+        
+        <!-- Status Display -->
         <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Testing connection...</div>
-        <pre id="response" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
+        
+        <!-- Debug Info -->
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
+            <div id="debugInfo" class="bg-white p-4 rounded-lg shadow"></div>
+        </div>
+
+        <!-- Response Area -->
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold mb-2">Response:</h2>
+            <pre id="response" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
+        </div>
+
+        <!-- Manual Test Button -->
+        <button onclick="runTest()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Run Test Again
+        </button>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec';
         const statusDiv = document.getElementById('status');
         const responseDiv = document.getElementById('response');
+        const debugDiv = document.getElementById('debugInfo');
 
-        function testConnection() {
-            const callbackName = 'callback_' + Date.now();
-            
-            return new Promise((resolve, reject) => {
-                window[callbackName] = function(data) {
-                    document.body.removeChild(script);
-                    delete window[callbackName];
-                    resolve(data);
-                };
-
-                const script = document.createElement('script');
-                script.src = `${API_URL}?action=getStats&callback=${callbackName}`;
-                
-                script.onerror = () => {
-                    document.body.removeChild(script);
-                    delete window[callbackName];
-                    reject(new Error('Failed to load script'));
-                };
-
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        document.body.removeChild(script);
-                        delete window[callbackName];
-                        reject(new Error('Request timed out'));
-                    }
-                }, 5000);
-
-                document.body.appendChild(script);
-            });
+        function updateDebugInfo(info) {
+            debugDiv.innerHTML += `<div class="mb-2">${new Date().toISOString()}: ${info}</div>`;
         }
 
-        testConnection()
-            .then(data => {
-                statusDiv.className = 'p-4 rounded-lg bg-green-100 text-green-700';
+        function runTest() {
+            // Reset displays
+            statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
+            statusDiv.textContent = 'Testing connection...';
+            debugDiv.innerHTML = '';
+            responseDiv.textContent = '';
+
+            // Create test URL
+            const timestamp = Date.now();
+            const callbackName = `callback_${timestamp}`;
+            const fullUrl = `${API_URL}?action=getStats&callback=${callbackName}&_=${timestamp}`;
+            
+            updateDebugInfo(`Testing URL: ${fullUrl}`);
+
+            // Set up global callback
+            window[callbackName] = function(data) {
+                updateDebugInfo('Callback received data');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
                 statusDiv.textContent = 'Connection successful!';
                 responseDiv.textContent = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                statusDiv.className = 'p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = `Connection failed: ${error.message}`;
-                console.error('Connection test failed:', error);
-            });
+                
+                // Cleanup
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            // Create and add script tag
+            const script = document.createElement('script');
+            script.src = fullUrl;
+            
+            script.onload = function() {
+                updateDebugInfo('Script loaded successfully');
+            };
+
+            script.onerror = function(error) {
+                updateDebugInfo(`Script error: ${error.type}`);
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                statusDiv.textContent = 'Connection failed: Script loading error';
+                
+                // Cleanup
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            // Add timeout
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    updateDebugInfo('Request timed out');
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                    statusDiv.textContent = 'Connection failed: Request timed out';
+                    
+                    // Cleanup
+                    document.body.removeChild(script);
+                    delete window[callbackName];
+                }
+            }, 10000);
+
+            updateDebugInfo('Adding script to document');
+            document.body.appendChild(script);
+        }
+
+        // Run initial test
+        runTest();
     </script>
 </body>
 </html>
