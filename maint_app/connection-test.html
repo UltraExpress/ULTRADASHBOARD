@@ -15,7 +15,7 @@
     <pre id="response"></pre>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwSVoBECzq9oBBorXQB32cb1U7my9cJHGCQmm6nPz6PKgQHPHosx3TpYYTqob3OBhapPA/exec'; // Replace with the deployment URL
+        const API_URL = 'YOUR_DEPLOYMENT_URL'; // Replace with your working deployment URL
 
         // Get All Data
         async function getAllData() {
@@ -40,25 +40,14 @@
             }
         }
 
-        // Update Status
+        // Update Status using GET
         async function updateStatus() {
             const partId = prompt('Enter Part ID to update:');
             const columnName = prompt('Enter column name (e.g., Status):');
             const newValue = prompt('Enter new value:');
-
-            const payload = {
-                action: 'updateCell',
-                partId: partId,
-                columnName: columnName,
-                newValue: newValue
-            };
-
+            
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                const response = await fetch(`${API_URL}?action=updateStatus&partId=${partId}&columnName=${columnName}&newValue=${newValue}`);
                 const data = await response.json();
                 document.getElementById('response').textContent = JSON.stringify(data, null, 2);
             } catch (error) {
