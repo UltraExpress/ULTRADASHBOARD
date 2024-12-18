@@ -200,17 +200,20 @@ async function fetchData() {
             console.error('Invalid data format:', result);
             allReports = [];
             filteredReports = [];
+            updateDashboard();
         }
     } catch (error) {
         console.error('Error fetching data:', error);
         allReports = [];
         filteredReports = [];
         alert('Error loading data. Please try again.');
+        updateDashboard();
+    } finally {
+        // Always ensure loading is hidden
+        console.log('Forcing loading state to hidden');
+        toggleLoading(false);
     }
-    toggleLoading(false);
-    console.log('Fetch complete');
 }
-
 
 
 
@@ -464,7 +467,7 @@ function updateTable() {
 
 
         
-        // Update the entire dashboard
+      
 // Update the entire dashboard
 function updateDashboard() {
     console.log('Starting dashboard update...');
@@ -477,7 +480,10 @@ function updateDashboard() {
         console.log('Table updated');
     } catch (error) {
         console.error('Error in updateDashboard:', error);
-        toggleLoading(false); // Ensure loading is hidden even if there's an error
+    } finally {
+        // Always ensure loading is hidden
+        console.log('Forcing loading state to hidden');
+        toggleLoading(false);
     }
 }
 
