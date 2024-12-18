@@ -15,15 +15,23 @@ let currentData = {
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Initializing dashboard...');
-    initializeDashboard();
+    console.log('DOM fully loaded');
+    initializeDashboard().catch(error => {
+        console.error('Failed to initialize dashboard:', error);
+        updateConnectionStatus('Initialization failed', 'error');
+    });
 });
 
 async function initializeDashboard() {
     try {
-        // Set initial connection status
-        updateConnectionStatus('Connecting...', 'connecting');
+        console.log('Starting initialization...');
         
+        // Set initial connection status
+        const statusElement = document.getElementById('connectionStatus');
+        if (statusElement) {
+            updateConnectionStatus('Connecting...', 'connecting');
+        }
+
         // Initialize filter event listeners
         initializeFilters();
         
@@ -31,11 +39,16 @@ async function initializeDashboard() {
         await loadDashboardData();
         
         // Start auto-refresh
-        setInterval(loadDashboardData, 300000); // Refresh every 5 minutes
+        setInterval(() => {
+            loadDashboardData().catch(error => {
+                console.error('Auto-refresh failed:', error);
+            });
+        }, 300000); // Refresh every 5 minutes
         
+        console.log('Initialization complete');
     } catch (error) {
-        console.error('Dashboard initialization error:', error);
-        updateConnectionStatus('Connection failed', 'error');
+        console.error('Initialization error:', error);
+        throw error;
     }
 }
 
@@ -67,13 +80,23 @@ function initializeFilters() {
 
 async function loadDashboardData() {
     try {
+        console.log('Fetching dashboard data...');
         const response = await fetch(SCRIPT_URL);
-        const data = await response.json();
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Received data:', data);
+
         // Update global state
         currentData = {
-            ...currentData,
-            ...data
+            stats: {
+                ...currentData.stats,
+                ...data.stats
+            },
+            reports: data.reports || []
         };
 
         // Update UI
@@ -84,14 +107,22 @@ async function loadDashboardData() {
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
         updateConnectionStatus('Connection failed', 'error');
+        throw error;
     }
 }
 
 function updateStats(stats) {
     const container = document.getElementById('statsContainer');
-    if (!container) return;
+    if (!container) {
+        console.error('Stats container not found');
+        return;
+    }
 
-    container.innerHTML = `
+    // If stats is null or undefined, keep showing loading state
+    if (!stats) return;
+
+    // Create the stats cards HTML
+    const statsHTML = `
         <div class="bg-white rounded-lg shadow p-6">
             <div class="text-gray-500">Total Reports</div>
             <div class="text-3xl font-bold">${stats.total || 0}</div>
@@ -113,6 +144,9 @@ function updateStats(stats) {
             <div class="text-3xl font-bold text-green-500">${stats.complete || 0}</div>
         </div>
     `;
+
+    // Update the container contents
+    container.innerHTML = statsHTML;
 }
 
 function updateReports(reports) {
@@ -121,10 +155,8 @@ function updateReports(reports) {
 
     if (!reports || reports.length === 0) {
         tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                    No reports available
-                </td>
+            <tr class="loading-row">
+                <td colspan="7">No reports available</td>
             </tr>
         `;
         return;
@@ -156,78 +188,3 @@ function updateConnectionStatus(message, status) {
 }
 
 function getStatusClass(status) {
-    switch (status) {
-        case 'connected':
-            return 'text-green-600';
-        case 'error':
-            return 'text-red-600';
-        case 'connecting':
-            return 'text-yellow-600';
-        default:
-            return 'text-gray-600';
-    }
-}
-
-function generateStatusDropdown(report) {
-    const statuses = ['Needs Work', 'Parts On Order', 'In Progress', 'Complete'];
-    return `
-        <select onchange="updateStatus('${report.id}', this.value)" 
-                class="rounded-md border-gray-300 shadow-sm py-1 px-2">
-            ${statuses.map(status => `
-                <option value="${status}" ${report.status === status ? 'selected' : ''}>
-                    ${status}
-                </option>
-            `).join('')}
-        </select>
-    `;
-}
-
-function generateMediaButtons(report) {
-    let buttons = [];
-    if (report.hasPhotos) {
-        buttons.push(`
-            <button onclick="viewMedia('${report.id}', 'photo')" 
-                    class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</button>
-        `);
-    }
-    if (report.hasVideos) {
-        buttons.push(`
-            <button onclick="viewMedia('${report.id}', 'video')" 
-                    class="text-blue-600 hover:text-blue-900">🎥 Video</button>
-        `);
-    }
-    return buttons.join('');
-}
-
-function refreshData() {
-    loadDashboardData();
-}
-
-// Utility function for debouncing
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Event handler functions
-function viewNotes(id) {
-    console.log('Viewing notes for:', id);
-    // Implement notes viewing functionality
-}
-
-function viewMedia(id, type) {
-    console.log('Viewing media:', type, 'for:', id);
-    // Implement media viewing functionality
-}
-
-function updateStatus(id, newStatus) {
-    console.log('Updating status:', id, 'to:', newStatus);
-    // Implement status update functionality
-}
