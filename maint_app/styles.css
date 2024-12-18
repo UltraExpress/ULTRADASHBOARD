@@ -1,53 +1,6 @@
-/* Loading States */
-.loading {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+/* Essential custom styles for Ultra Wash Dashboard */
 
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Status Indicators */
-.status-needs-work {
-    background-color: #FEE2E2;
-    color: #991B1B;
-}
-
-.status-in-progress {
-    background-color: #FEF3C7;
-    color: #92400E;
-}
-
-.status-parts-order {
-    background-color: #E0E7FF;
-    color: #3730A3;
-}
-
-.status-complete {
-    background-color: #DCFCE7;
-    color: #166534;
-}
-
-/* Date Urgency */
+/* Urgent indicator styling */
 .date-urgent {
     background-color: #FF4444;
     font-weight: 800;
@@ -64,18 +17,44 @@
     margin-left: 8px;
 }
 
-/* Custom Form Elements */
+/* Status dropdown custom width */
 .status-dropdown {
     max-width: 200px;
 }
 
-/* Table Styles */
-.reports-table th {
-    white-space: nowrap;
-    padding: 0.75rem;
+/* Loading animation */
+.loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.reports-table td {
-    padding: 1rem 0.75rem;
-    vertical-align: top;
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+}
+
+/* Modal styling */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+}
+
+.modal-backdrop.show {
+    display: flex;
+}
+
+/* Connection status indicators */
+.status-connected {
+    color: #10B981;
+}
+
+.status-error {
+    color: #EF4444;
+}
+
+.status-loading {
+    color: #F59E0B;
 }
