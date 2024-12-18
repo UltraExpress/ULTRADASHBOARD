@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash Stats Test (Redirect)</title>
+    <title>Ultra Wash Stats Test</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
@@ -41,48 +41,46 @@
             debugDiv.innerHTML += `<div class="text-sm mb-1">${new Date().toISOString()}: ${info}</div>`;
         }
 
-        async function testStats() {
+        function testStats() {
             updateDebug('Starting stats test');
             statusDiv.textContent = 'Fetching stats...';
             statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
             responseDiv.textContent = '';
 
-            try {
-                // First make a POST request to "wake up" the script
-                updateDebug('Making initial POST request');
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                    },
-                    body: JSON.stringify({ action: 'getStats' })
-                });
-
-                // Then fetch the data
-                updateDebug('Fetching data');
-                const response = await fetch(`${API_URL}?action=getStats&noCache=${Date.now()}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            // Create a unique callback name
+            const callbackName = 'callback_' + Date.now();
+            window[callbackName] = function(data) {
+                updateDebug('Received JSONP response');
+                try {
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                    statusDiv.textContent = 'Data received successfully!';
+                    responseDiv.textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    updateDebug(`Error processing response: ${error.message}`);
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                    statusDiv.textContent = 'Failed to process data';
                 }
+                // Cleanup
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
 
-                const data = await response.json();
-                updateDebug('Data received');
-                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                statusDiv.textContent = 'Data received successfully!';
-                responseDiv.textContent = JSON.stringify(data, null, 2);
-
-            } catch (error) {
-                updateDebug(`Error: ${error.message}`);
+            // Create script element for JSONP
+            const script = document.createElement('script');
+            const url = `${API_URL}?action=getStats&callback=${callbackName}&t=${Date.now()}`;
+            updateDebug(`Loading URL: ${url}`);
+            script.src = url;
+            
+            script.onerror = function(error) {
+                updateDebug(`Script error: ${error.type}`);
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = `Failed to load data: ${error.message}`;
-            }
+                statusDiv.textContent = 'Failed to load data';
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            updateDebug('Adding script to document');
+            document.body.appendChild(script);
         }
     </script>
 </body>
