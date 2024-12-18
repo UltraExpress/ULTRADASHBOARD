@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash Minimal Test</title>
+    <title>Ultra Wash Connection Test</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
@@ -13,15 +13,26 @@
         <!-- Status Display -->
         <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test</div>
         
-        <!-- Test Button -->
-        <button onclick="testConnection()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Test Connection
-        </button>
+        <!-- Test Buttons -->
+        <div class="space-x-4 mb-6">
+            <button onclick="testConnection()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Test Connection
+            </button>
+            <button onclick="fetchStats()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Fetch Stats
+            </button>
+        </div>
 
         <!-- Debug Info -->
-        <div class="mb-4 mt-4">
+        <div class="mb-4">
             <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
             <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48"></div>
+        </div>
+
+        <!-- Stats Data -->
+        <div>
+            <h2 class="text-lg font-semibold mb-2">Stats Data:</h2>
+            <pre id="statsData" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
         </div>
     </div>
 
@@ -29,6 +40,7 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec';
         const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debugInfo');
+        const statsDiv = document.getElementById('statsData');
 
         function updateDebug(info) {
             debugDiv.innerHTML += `<div class="text-sm mb-1">${new Date().toISOString()}: ${info}</div>`;
@@ -40,7 +52,6 @@
             statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
 
             try {
-                // Using exact same pattern as your working form
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -62,6 +73,46 @@
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
                 statusDiv.textContent = 'Connection failed';
             }
+        }
+
+        function fetchStats() {
+            updateDebug('Starting stats fetch');
+            statusDiv.textContent = 'Fetching stats...';
+            statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
+            statsDiv.textContent = '';
+
+            const callbackName = 'callback_' + Date.now();
+            
+            // Create global callback
+            window[callbackName] = function(data) {
+                updateDebug('Received stats data');
+                try {
+                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                    statusDiv.textContent = 'Stats received successfully!';
+                    statsDiv.textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    updateDebug(`Error parsing response: ${error.message}`);
+                }
+                // Cleanup
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            // Create script element
+            const script = document.createElement('script');
+            const url = `${API_URL}?action=getStats&callback=${callbackName}&t=${Date.now()}`;
+            updateDebug(`Loading URL: ${url}`);
+            script.src = url;
+            
+            script.onerror = function(error) {
+                updateDebug(`Script error: ${error.type}`);
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                statusDiv.textContent = 'Failed to load stats';
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            document.body.appendChild(script);
         }
     </script>
 </body>
