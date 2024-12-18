@@ -156,10 +156,21 @@
         let allReports = [];
         let filteredReports = [];
 
+        
+        
+        
+        
+        
+        
         // Show/hide loading overlay
-        function toggleLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
-        }
+function toggleLoading(show) {
+    const loader = document.getElementById('loadingOverlay');
+    if (show) {
+        loader.classList.remove('hidden');
+    } else {
+        loader.classList.add('hidden');
+    }
+}
 
 
 
@@ -252,36 +263,41 @@ async function fetchData() {
         
         // Update stats cards
 function updateStats() {
-    const stats = {
-        total: filteredReports.length,
-        needsWork: filteredReports.filter(r => r.Status.includes('NEEDS')).length,
-        partsOnOrder: filteredReports.filter(r => r.Status.includes('PARTS')).length,
-        inProgress: filteredReports.filter(r => r.Status.includes('IN PROGRESS')).length,
-        complete: filteredReports.filter(r => r.Status.includes('COMPLETE')).length
-    };
-
-    document.getElementById('statsContainer').innerHTML = `
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-gray-500">Total Reports</div>
-            <div class="text-3xl font-bold">${stats.total}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-red-500">Needs Work</div>
-            <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-indigo-500">Parts On Order</div>
-            <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-yellow-500">In Progress</div>
-            <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="text-green-500">Complete</div>
-            <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
-        </div>
-    `;
+    try {
+        const stats = {
+            total: filteredReports.length,
+            needsWork: filteredReports.filter(r => String(r.Status).includes('NEEDS')).length,
+            partsOnOrder: filteredReports.filter(r => String(r.Status).includes('PARTS')).length,
+            inProgress: filteredReports.filter(r => String(r.Status).includes('IN PROGRESS')).length,
+            complete: filteredReports.filter(r => String(r.Status).includes('COMPLETE')).length
+        };
+        
+        document.getElementById('statsContainer').innerHTML = `
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-gray-500">Total Reports</div>
+                <div class="text-3xl font-bold">${stats.total}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-red-500">Needs Work</div>
+                <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-indigo-500">Parts On Order</div>
+                <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-yellow-500">In Progress</div>
+                <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-green-500">Complete</div>
+                <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error in updateStats:', error);
+        throw error;
+    }
 }
         
         
@@ -427,11 +443,40 @@ function updateTable() {
             updateDashboard();
         }
 
+
+
+
+
+
+
+
+
+        
         // Update the entire dashboard
-        function updateDashboard() {
-            updateStats();
-            updateTable();
-        }
+// Update the entire dashboard
+function updateDashboard() {
+    console.log('Starting dashboard update...');
+    try {
+        console.log('Updating stats...');
+        updateStats();
+        console.log('Stats updated');
+        console.log('Updating table...');
+        updateTable();
+        console.log('Table updated');
+    } catch (error) {
+        console.error('Error in updateDashboard:', error);
+        toggleLoading(false); // Ensure loading is hidden even if there's an error
+    }
+}
+
+
+
+
+
+
+
+
+        
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
@@ -461,6 +506,13 @@ function updateTable() {
             });
         });
 
+
+
+
+
+
+
+        
         // Utility function for debouncing
         function debounce(func, wait) {
             let timeout;
