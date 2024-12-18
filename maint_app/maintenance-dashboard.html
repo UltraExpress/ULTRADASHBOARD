@@ -165,22 +165,23 @@
 
 
 
+
 // Fetch all data from the API
 async function fetchData() {
     toggleLoading(true);
     try {
         const response = await fetch(`${API_URL}?action=getAllData`);
-        const data = await response.json();
+        const result = await response.json();
         
-        // Make sure we have an array before assigning
-        if (Array.isArray(data)) {
-            allReports = data;
-            filteredReports = data;
+        // Access the data array from the response
+        if (result.status === "success" && Array.isArray(result.data)) {
+            allReports = result.data;
+            filteredReports = result.data;
         } else {
-            // If data is not an array, initialize empty arrays
+            // If no valid data array, initialize empty arrays
             allReports = [];
             filteredReports = [];
-            console.error('Unexpected data format:', data);
+            console.error('Unexpected data format:', result);
         }
         
         updateDashboard();
