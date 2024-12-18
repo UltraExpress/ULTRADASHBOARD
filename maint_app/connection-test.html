@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash Stats Test</title>
+    <title>Ultra Wash Minimal Test</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash Stats Test</h1>
+        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash Connection Test</h1>
         
         <!-- Status Display -->
         <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test</div>
         
         <!-- Test Button -->
-        <button onclick="testStats()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Get Stats Data
+        <button onclick="testConnection()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Test Connection
         </button>
 
         <!-- Debug Info -->
@@ -23,64 +23,45 @@
             <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
             <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48"></div>
         </div>
-
-        <!-- Response Data -->
-        <div>
-            <h2 class="text-lg font-semibold mb-2">Response Data:</h2>
-            <pre id="response" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
-        </div>
     </div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec';
         const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debugInfo');
-        const responseDiv = document.getElementById('response');
 
         function updateDebug(info) {
             debugDiv.innerHTML += `<div class="text-sm mb-1">${new Date().toISOString()}: ${info}</div>`;
         }
 
-        function testStats() {
-            updateDebug('Starting stats test');
-            statusDiv.textContent = 'Fetching stats...';
+        async function testConnection() {
+            updateDebug('Starting connection test');
+            statusDiv.textContent = 'Testing...';
             statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
-            responseDiv.textContent = '';
 
-            // Create a unique callback name
-            const callbackName = 'callback_' + Date.now();
-            window[callbackName] = function(data) {
-                updateDebug('Received JSONP response');
-                try {
-                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                    statusDiv.textContent = 'Data received successfully!';
-                    responseDiv.textContent = JSON.stringify(data, null, 2);
-                } catch (error) {
-                    updateDebug(`Error processing response: ${error.message}`);
-                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                    statusDiv.textContent = 'Failed to process data';
-                }
-                // Cleanup
-                document.body.removeChild(script);
-                delete window[callbackName];
-            };
+            try {
+                // Using exact same pattern as your working form
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify({
+                        action: 'test',
+                        timestamp: new Date().toISOString()
+                    })
+                });
 
-            // Create script element for JSONP
-            const script = document.createElement('script');
-            const url = `${API_URL}?action=getStats&callback=${callbackName}&t=${Date.now()}`;
-            updateDebug(`Loading URL: ${url}`);
-            script.src = url;
-            
-            script.onerror = function(error) {
-                updateDebug(`Script error: ${error.type}`);
+                updateDebug('Request completed');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                statusDiv.textContent = 'Connection successful!';
+
+            } catch (error) {
+                updateDebug(`Error: ${error.message}`);
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = 'Failed to load data';
-                document.body.removeChild(script);
-                delete window[callbackName];
-            };
-
-            updateDebug('Adding script to document');
-            document.body.appendChild(script);
+                statusDiv.textContent = 'Connection failed';
+            }
         }
     </script>
 </body>
