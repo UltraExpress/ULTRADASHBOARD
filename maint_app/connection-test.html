@@ -33,24 +33,33 @@
             resultDiv.textContent = 'Updating...';
 
             try {
-                // Create the request body as per API docs
-                const requestBody = {
-                    action: 'updateCell',
-                    partId: '6',
-                    columnName: 'Status',
-                    newValue: sanitizedStatus
-                };
+                // Making a form data request instead of JSON
+                const formData = new FormData();
+                formData.append('action', 'updateCell');
+                formData.append('partId', '6');
+                formData.append('columnName', 'Status');
+                formData.append('newValue', sanitizedStatus);
 
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
+                    mode: 'no-cors',  // Add this for CORS
+                    body: formData
                 });
+
+                // Since we're using no-cors, we won't get a readable response
+                resultDiv.textContent = 'Update sent. Check Google Sheet for changes.';
                 
-                const data = await response.json();
-                resultDiv.textContent = 'Response: ' + JSON.stringify(data);
+                // Verify the update after a delay
+                setTimeout(async () => {
+                    try {
+                        const verifyResponse = await fetch(`${API_URL}?action=getAllData`);
+                        const data = await verifyResponse.json();
+                        resultDiv.textContent += '\nVerification Data: ' + JSON.stringify(data);
+                    } catch (verifyError) {
+                        resultDiv.textContent += '\nVerification Error: ' + verifyError.message;
+                    }
+                }, 2000);
+
             } catch (error) {
                 resultDiv.textContent = 'Error: ' + error.message;
                 console.error(error);
