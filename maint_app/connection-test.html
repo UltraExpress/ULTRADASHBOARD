@@ -10,9 +10,13 @@
     <div class="max-w-2xl mx-auto">
         <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash Connection Test</h1>
         
-        <!-- Status Display -->
-        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test</div>
-        
+        <!-- API URL Input -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Google Apps Script URL:</label>
+            <input type="text" id="apiUrl" class="w-full p-2 border rounded" 
+                value="https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec">
+        </div>
+
         <!-- Test Buttons -->
         <div class="space-x-4 mb-6">
             <button onclick="testConnection()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
@@ -21,105 +25,109 @@
             <button onclick="fetchStats()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
                 Fetch Stats
             </button>
+            <button onclick="fetchReports()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                Fetch Reports
+            </button>
         </div>
+
+        <!-- Status Display -->
+        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Ready to test</div>
 
         <!-- Debug Info -->
         <div class="mb-4">
             <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
-            <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48"></div>
+            <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48 text-sm font-mono"></div>
         </div>
 
-        <!-- Stats Data -->
+        <!-- Response Data -->
         <div>
-            <h2 class="text-lg font-semibold mb-2">Stats Data:</h2>
-            <pre id="statsData" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
+            <h2 class="text-lg font-semibold mb-2">Response Data:</h2>
+            <pre id="responseData" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96 text-sm"></pre>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbz7blJPKrmYhxCczyop4J6ObxDptjfzfYTiJTRrN-3q4WRIiQbPhoBOj4-MTl6UherQiA/exec';
-        const statusDiv = document.getElementById('status');
         const debugDiv = document.getElementById('debugInfo');
-        const statsDiv = document.getElementById('statsData');
+        const responseDiv = document.getElementById('responseData');
+        const statusDiv = document.getElementById('status');
 
         function updateDebug(info) {
-            debugDiv.innerHTML += `<div class="text-sm mb-1">${new Date().toISOString()}: ${info}</div>`;
+            const timestamp = new Date().toISOString();
+            debugDiv.innerHTML += `<div class="mb-1">${timestamp}: ${info}</div>`;
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const colors = {
+                info: 'bg-yellow-100 text-yellow-700',
+                success: 'bg-green-100 text-green-700',
+                error: 'bg-red-100 text-red-700'
+            };
+            statusDiv.className = `mb-4 p-4 rounded-lg ${colors[type]}`;
+            statusDiv.textContent = message;
+        }
+
+        async function makeRequest(action) {
+            const apiUrl = document.getElementById('apiUrl').value;
+            updateDebug(`Making ${action} request to: ${apiUrl}`);
+            
+            try {
+                const response = await fetch(`${apiUrl}?action=${action}&t=${Date.now()}`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                return data;
+
+            } catch (error) {
+                updateDebug(`Error: ${error.message}`);
+                responseDiv.textContent = '';
+                throw error;
+            }
         }
 
         async function testConnection() {
             updateDebug('Starting connection test');
-            statusDiv.textContent = 'Testing...';
-            statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
-
+            updateStatus('Testing connection...', 'info');
+            
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                    },
-                    body: JSON.stringify({
-                        action: 'test',
-                        timestamp: new Date().toISOString()
-                    })
-                });
-
-                updateDebug('Request completed');
-                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                statusDiv.textContent = 'Connection successful!';
-
+                const data = await makeRequest('test');
+                updateStatus('Connection successful!', 'success');
+                updateDebug('Connection test completed successfully');
             } catch (error) {
-                updateDebug(`Error: ${error.message}`);
-                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = 'Connection failed';
+                updateStatus('Connection failed', 'error');
             }
         }
 
         async function fetchStats() {
             updateDebug('Starting stats fetch');
-            statusDiv.textContent = 'Fetching stats...';
-            statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
-            statsDiv.textContent = '';
-
+            updateStatus('Fetching stats...', 'info');
+            
             try {
-                const url = `${API_URL}?action=getStats&t=${Date.now()}`;
-                updateDebug(`Making request to: ${url}`);
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        updateDebug('Received response');
-                        try {
-                            const data = JSON.parse(xhr.responseText);
-                            statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                            statusDiv.textContent = 'Stats received successfully!';
-                            statsDiv.textContent = JSON.stringify(data, null, 2);
-                        } catch (error) {
-                            updateDebug(`Error parsing response: ${error.message}`);
-                            statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                            statusDiv.textContent = 'Failed to parse stats';
-                        }
-                    } else {
-                        updateDebug(`Request failed with status: ${xhr.status}`);
-                        statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                        statusDiv.textContent = 'Failed to load stats';
-                    }
-                };
-
-                xhr.onerror = function() {
-                    updateDebug('Request failed');
-                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                    statusDiv.textContent = 'Failed to load stats';
-                };
-
-                xhr.send();
-
+                const data = await makeRequest('getStats');
+                updateStatus('Stats received successfully!', 'success');
+                updateDebug('Stats fetch completed successfully');
             } catch (error) {
-                updateDebug(`Error: ${error.message}`);
-                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = 'Failed to load stats';
+                updateStatus('Failed to fetch stats', 'error');
+            }
+        }
+
+        async function fetchReports() {
+            updateDebug('Starting reports fetch');
+            updateStatus('Fetching reports...', 'info');
+            
+            try {
+                const data = await makeRequest('getReports');
+                updateStatus('Reports received successfully!', 'success');
+                updateDebug('Reports fetch completed successfully');
+            } catch (error) {
+                updateStatus('Failed to fetch reports', 'error');
             }
         }
     </script>
