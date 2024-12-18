@@ -2,9 +2,6 @@
 <html>
 <head>
     <title>Status Update Test</title>
-    <style>
-        .button-row { margin: 10px 0; }
-    </style>
 </head>
 <body>
     <h2>Status Update Test</h2>
@@ -17,10 +14,7 @@
             <option>In Progress</option>
             <option>Complete</option>
         </select>
-        <div class="button-row">
-            <button onclick="updateStatusMethod1()">Update Method 1 (URL Params)</button>
-            <button onclick="updateStatusMethod2()">Update Method 2 (Form Submit)</button>
-        </div>
+        <button onclick="testUpdate()">Test Update</button>
     </div>
 
     <div id="result" style="margin-top: 20px;"></div>
@@ -32,57 +26,18 @@
             return status.split(' ').join('+').toUpperCase();
         }
 
-        // Method 1: Using URL Parameters
-        async function updateStatusMethod1() {
+        function testUpdate() {
             const status = document.getElementById('statusSelect').value;
             const sanitizedStatus = sanitizeStatus(status);
             const resultDiv = document.getElementById('result');
-            resultDiv.textContent = 'Updating using Method 1...';
-
-            try {
-                const url = `${API_URL}?action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`;
-                
-                // Create a hidden form and submit it
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = url;
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-
-                resultDiv.textContent = 'Update request sent via Method 1. Check sheet in a moment.';
-            } catch (error) {
-                resultDiv.textContent = 'Error Method 1: ' + error.message;
-                console.error(error);
-            }
-        }
-
-        // Method 2: Using XMLHttpRequest
-        async function updateStatusMethod2() {
-            const status = document.getElementById('statusSelect').value;
-            const sanitizedStatus = sanitizeStatus(status);
-            const resultDiv = document.getElementById('result');
-            resultDiv.textContent = 'Updating using Method 2...';
-
-            try {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', API_URL);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                
-                const data = `action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`;
-                xhr.send(data);
-
-                xhr.onload = function() {
-                    resultDiv.textContent = 'Update request sent via Method 2. Check sheet in a moment.';
-                };
-                
-                xhr.onerror = function() {
-                    resultDiv.textContent = 'Error Method 2: Failed to send request';
-                };
-            } catch (error) {
-                resultDiv.textContent = 'Error Method 2: ' + error.message;
-                console.error(error);
-            }
+            
+            // Create the URL with all parameters
+            const url = `${API_URL}?action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`;
+            
+            // Open the URL in a new window/tab
+            window.open(url, '_blank');
+            
+            resultDiv.textContent = 'Update request sent. Check the new tab and the sheet.';
         }
     </script>
 </body>
