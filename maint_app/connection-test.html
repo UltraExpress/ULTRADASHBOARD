@@ -3,32 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Wash API Debug Test</title>
+    <title>Ultra Wash API Test (Fetch)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash API Debug Test</h1>
+        <h1 class="text-2xl font-bold text-blue-600 mb-4">Ultra Wash API Test (Multiple Methods)</h1>
         
         <!-- Status Display -->
-        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Testing connection...</div>
+        <div id="status" class="mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700">Select a test method</div>
         
+        <!-- Test Buttons -->
+        <div class="space-x-4 mb-6">
+            <button onclick="testFetch()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Test Direct Fetch
+            </button>
+            <button onclick="testJsonp()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Test JSONP
+            </button>
+        </div>
+
         <!-- Debug Info -->
         <div class="mb-4">
             <h2 class="text-lg font-semibold mb-2">Debug Information:</h2>
-            <div id="debugInfo" class="bg-white p-4 rounded-lg shadow"></div>
+            <div id="debugInfo" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-48"></div>
         </div>
 
         <!-- Response Area -->
-        <div class="mb-4">
+        <div>
             <h2 class="text-lg font-semibold mb-2">Response:</h2>
             <pre id="response" class="bg-white p-4 rounded-lg shadow overflow-auto max-h-96"></pre>
         </div>
-
-        <!-- Manual Test Button -->
-        <button onclick="runTest()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Run Test Again
-        </button>
     </div>
 
     <script>
@@ -37,73 +42,70 @@
         const responseDiv = document.getElementById('response');
         const debugDiv = document.getElementById('debugInfo');
 
-        function updateDebugInfo(info) {
-            debugDiv.innerHTML += `<div class="mb-2">${new Date().toISOString()}: ${info}</div>`;
+        function updateDebug(info) {
+            const timestamp = new Date().toISOString();
+            debugDiv.innerHTML += `<div class="text-sm mb-1">${timestamp}: ${info}</div>`;
         }
 
-        function runTest() {
-            // Reset displays
+        // Test using direct fetch
+        async function testFetch() {
             statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
-            statusDiv.textContent = 'Testing connection...';
+            statusDiv.textContent = 'Testing direct fetch...';
             debugDiv.innerHTML = '';
             responseDiv.textContent = '';
 
-            // Create test URL
-            const timestamp = Date.now();
-            const callbackName = `callback_${timestamp}`;
-            const fullUrl = `${API_URL}?action=getStats&callback=${callbackName}&_=${timestamp}`;
-            
-            updateDebugInfo(`Testing URL: ${fullUrl}`);
-
-            // Set up global callback
-            window[callbackName] = function(data) {
-                updateDebugInfo('Callback received data');
+            updateDebug('Starting fetch test');
+            try {
+                const response = await fetch(`${API_URL}?action=getStats`);
+                updateDebug(`Fetch status: ${response.status}`);
+                
+                const data = await response.text();
+                updateDebug('Received response');
+                
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
-                statusDiv.textContent = 'Connection successful!';
-                responseDiv.textContent = JSON.stringify(data, null, 2);
-                
-                // Cleanup
-                document.body.removeChild(script);
-                delete window[callbackName];
-            };
-
-            // Create and add script tag
-            const script = document.createElement('script');
-            script.src = fullUrl;
-            
-            script.onload = function() {
-                updateDebugInfo('Script loaded successfully');
-            };
-
-            script.onerror = function(error) {
-                updateDebugInfo(`Script error: ${error.type}`);
+                statusDiv.textContent = 'Fetch successful!';
+                responseDiv.textContent = data;
+            } catch (error) {
+                updateDebug(`Fetch error: ${error.message}`);
                 statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                statusDiv.textContent = 'Connection failed: Script loading error';
-                
-                // Cleanup
-                document.body.removeChild(script);
-                delete window[callbackName];
-            };
-
-            // Add timeout
-            setTimeout(() => {
-                if (window[callbackName]) {
-                    updateDebugInfo('Request timed out');
-                    statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
-                    statusDiv.textContent = 'Connection failed: Request timed out';
-                    
-                    // Cleanup
-                    document.body.removeChild(script);
-                    delete window[callbackName];
-                }
-            }, 10000);
-
-            updateDebugInfo('Adding script to document');
-            document.body.appendChild(script);
+                statusDiv.textContent = `Fetch failed: ${error.message}`;
+            }
         }
 
-        // Run initial test
-        runTest();
+        // Test using JSONP
+        function testJsonp() {
+            statusDiv.className = 'mb-4 p-4 rounded-lg bg-yellow-100 text-yellow-700';
+            statusDiv.textContent = 'Testing JSONP...';
+            debugDiv.innerHTML = '';
+            responseDiv.textContent = '';
+
+            const callbackName = 'callback_' + Date.now();
+            updateDebug('Starting JSONP test');
+            
+            window[callbackName] = function(data) {
+                updateDebug('JSONP callback received');
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                statusDiv.textContent = 'JSONP successful!';
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=getStats&callback=${callbackName}`;
+            
+            script.onload = () => updateDebug('Script loaded');
+            script.onerror = (error) => {
+                updateDebug(`Script error: ${error.type}`);
+                statusDiv.className = 'mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                statusDiv.textContent = 'JSONP failed: Script loading error';
+                document.body.removeChild(script);
+                delete window[callbackName];
+            };
+
+            updateDebug('Adding script to document');
+            document.body.appendChild(script);
+        }
     </script>
 </body>
 </html>
