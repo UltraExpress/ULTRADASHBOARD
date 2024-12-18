@@ -166,25 +166,30 @@
 
 
 
+
 // Fetch all data from the API
 async function fetchData() {
+    console.log('Starting fetch...');
     toggleLoading(true);
     try {
+        console.log('Making API request...');
         const response = await fetch(`${API_URL}?action=getAllData`);
+        console.log('Got response:', response);
         const result = await response.json();
+        console.log('Parsed JSON:', result);
         
-        // Access the data array from the response
         if (result.status === "success" && Array.isArray(result.data)) {
+            console.log('Setting data arrays...');
             allReports = result.data;
             filteredReports = result.data;
+            console.log('Data arrays set, updating dashboard...');
+            updateDashboard();
+            console.log('Dashboard updated');
         } else {
-            // If no valid data array, initialize empty arrays
+            console.error('Invalid data format:', result);
             allReports = [];
             filteredReports = [];
-            console.error('Unexpected data format:', result);
         }
-        
-        updateDashboard();
     } catch (error) {
         console.error('Error fetching data:', error);
         allReports = [];
@@ -192,6 +197,7 @@ async function fetchData() {
         alert('Error loading data. Please try again.');
     }
     toggleLoading(false);
+    console.log('Fetch complete');
 }
 
 
@@ -199,6 +205,11 @@ async function fetchData() {
 
         
 
+       
+        
+        
+        
+        
         // Update status for a report
         async function updateStatus(partId, newStatus) {
             toggleLoading(true);
