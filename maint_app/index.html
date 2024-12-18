@@ -4,18 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ULTRA WASH Maintenance Dashboard</title>
-    <!-- Tailwind CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <!-- React and Babel -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
-    <!-- Custom CSS -->
     <link href="styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-    <div id="root"></div>
-    <!-- Dashboard JavaScript -->
-    <script type="text/babel" src="dashboard.js"></script>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="min-h-screen">
+        <!-- Header -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-blue-600">ULTRA WASH Maintenance Reports</h1>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <!-- Stats Overview -->
+            <div id="statsOverview" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+                <!-- Stats cards will be inserted here by JavaScript -->
+            </div>
+
+            <!-- Filters -->
+            <div id="filtersSection" class="bg-white rounded-lg shadow p-4 mb-6">
+                <!-- Filters will be inserted here by JavaScript -->
+            </div>
+
+            <!-- Reports Table -->
+            <div id="reportsSection" class="bg-white rounded-lg shadow overflow-hidden">
+                <!-- Table will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
 </body>
 </html>
