@@ -101,11 +101,21 @@ function initializeReportsTable() {
 
 
 
+
+
+
+
+
 async function fetchDashboardData() {
     loadingOverlay.style.display = 'flex';
     try {
         console.log('Fetching from:', API_URL);
-        const response = await fetch(`${API_URL}?action=getStats`);
+        const response = await fetch(`${API_URL}?action=getStats`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
         console.log('Response:', response);
         const data = await response.json();
         console.log('Data:', data);
