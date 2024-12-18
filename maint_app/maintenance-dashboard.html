@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTRA WASH Maintenance Dashboard</title>
+    <title>ULTRA WASH Admin Dashboard</title>
+    <!-- Tailwind CSS via CDN -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <!-- Custom styles -->
     <link href="styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading">
-        <div class="loading-spinner"></div>
-    </div>
-
     <div class="min-h-screen">
         <!-- Header -->
         <nav class="bg-white shadow-lg">
@@ -21,6 +18,9 @@
                     <div class="flex items-center">
                         <h1 class="text-2xl font-bold text-blue-600">ULTRA WASH Maintenance Reports</h1>
                     </div>
+                    <div class="flex items-center">
+                        <span id="connectionStatus" class="text-sm text-gray-500">Connecting...</span>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -28,22 +28,74 @@
         <!-- Main Content -->
         <div class="max-w-7xl mx-auto px-4 py-6">
             <!-- Stats Overview -->
-            <div id="statsOverview" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-                <!-- Stats cards will be inserted here by JavaScript -->
+            <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+                <!-- Stats will be inserted here by JS -->
+                <div class="bg-white rounded-lg shadow p-6 loading-pulse">
+                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div class="h-8 bg-gray-200 rounded w-1/4 mt-4"></div>
+                </div>
+                <!-- Repeat placeholder 4 more times for loading state -->
             </div>
 
             <!-- Filters -->
-            <div id="filtersSection" class="bg-white rounded-lg shadow p-4 mb-6">
-                <!-- Filters will be inserted here by JavaScript -->
+            <div class="bg-white rounded-lg shadow p-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <select id="locationFilter" class="rounded-md border-gray-300 shadow-sm">
+                        <option value="">All Locations</option>
+                        <option value="Riverside">Riverside</option>
+                        <option value="Santa Ana">Santa Ana</option>
+                    </select>
+                    <select id="timeFilter" class="rounded-md border-gray-300 shadow-sm">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                    </select>
+                    <select id="statusFilter" class="rounded-md border-gray-300 shadow-sm">
+                        <option value="">All Statuses</option>
+                        <option value="needsWork">Needs Work</option>
+                        <option value="partsOnOrder">Parts On Order</option>
+                        <option value="inProgress">In Progress</option>
+                        <option value="complete">Complete</option>
+                    </select>
+                    <input type="text" id="searchInput" 
+                           class="rounded-md border-gray-300 shadow-sm" 
+                           placeholder="Search equipment...">
+                </div>
             </div>
 
             <!-- Reports Table -->
-            <div id="reportsSection" class="bg-white rounded-lg shadow overflow-hidden">
-                <!-- Table will be inserted here by JavaScript -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Equipment</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Update</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Media</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody" class="divide-y divide-gray-200">
+                        <!-- Reports will be inserted here by JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <script src="dashboard.js" type="module"></script>
+    <!-- Modal for Notes/Media -->
+    <div id="modal" class="hidden fixed inset-0 modal-backdrop items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalTitle" class="text-lg font-bold">Details</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="dashboard.js"></script>
 </body>
 </html>
