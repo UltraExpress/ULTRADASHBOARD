@@ -1,57 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Apps Script API Test</title>
+    <title>Status Update Test</title>
 </head>
 <body>
-    <h1>Test Google Apps Script API</h1>
-    <button onclick="getAllData()">Get All Data</button>
-    <button onclick="getRowByPartId()">Get Row by Part ID</button>
-    <button onclick="updateStatus()">Update Status</button>
+    <h2>Status Update Test</h2>
+    
+    <div>
+        <p>Part ID: 6 (Protect)</p>
+        <select id="statusSelect">
+            <option>Needs Work</option>
+            <option>Parts On Order</option>
+            <option>In Progress</option>
+            <option>Complete</option>
+        </select>
+        <button onclick="updateStatus()">Update Status</button>
+    </div>
 
-    <h2>Response:</h2>
-    <pre id="response"></pre>
+    <div id="result" style="margin-top: 20px;"></div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzL9ffrICvYzdGEnDoj_DV2zoJZQC2wPigydwaG4MZLwAboOwPGBC3BJFsVFn8qt8x0Ww/exec'; // Replace with your working deployment URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzL9ffrICvYzdGEnDoj_DV2zoJZQC2wPigydwaG4MZLwAboOwPGBC3BJFsVFn8qt8x0Ww/exec';
 
-        // Get All Data
-        async function getAllData() {
-            try {
-                const response = await fetch(`${API_URL}?action=getAllData`);
-                const data = await response.json();
-                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
-            } catch (error) {
-                console.error('Error:', error);
-            }
+        function sanitizeStatus(status) {
+            return status.split(' ').join('+').toUpperCase();
         }
 
-        // Get Row by Part ID
-        async function getRowByPartId() {
-            const partId = prompt('Enter Part ID to fetch (e.g., 19):');
-            try {
-                const response = await fetch(`${API_URL}?action=getRowByPartId&partId=${partId}`);
-                const data = await response.json();
-                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-
-        // Update Status using GET
         async function updateStatus() {
-            const partId = prompt('Enter Part ID to update:');
-            const columnName = prompt('Enter column name (e.g., Status):');
-            const newValue = prompt('Enter new value:');
-            
+            const status = document.getElementById('statusSelect').value;
+            const sanitizedStatus = sanitizeStatus(status);
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Updating...';
+
             try {
-                const response = await fetch(`${API_URL}?action=updateStatus&partId=${partId}&columnName=${columnName}&newValue=${newValue}`);
+                const response = await fetch(`${API_URL}?action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`, {
+                    method: 'GET'  // Try with GET first
+                });
+                
                 const data = await response.json();
-                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+                resultDiv.textContent = 'Response: ' + JSON.stringify(data);
             } catch (error) {
-                console.error('Error:', error);
+                resultDiv.textContent = 'Error: ' + error.message;
+                console.error(error);
             }
         }
     </script>
