@@ -33,8 +33,20 @@
             resultDiv.textContent = 'Updating...';
 
             try {
-                const response = await fetch(`${API_URL}?action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`, {
-                    method: 'GET'  // Try with GET first
+                // Create the request body as per API docs
+                const requestBody = {
+                    action: 'updateCell',
+                    partId: '6',
+                    columnName: 'Status',
+                    newValue: sanitizedStatus
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();
