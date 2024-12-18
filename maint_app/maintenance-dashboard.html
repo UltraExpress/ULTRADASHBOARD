@@ -353,6 +353,7 @@ function updateTable() {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         const end = start + ITEMS_PER_PAGE;
         const pageReports = filteredReports.slice(start, end);
+         console.log('Sample report:', pageReports[0]);
 
         const tbody = document.getElementById('reportsTableBody');
         tbody.innerHTML = pageReports.map(report => {
