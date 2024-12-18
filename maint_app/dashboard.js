@@ -99,6 +99,16 @@ function initializeReportsTable() {
     `;
 }
 
+
+
+
+
+
+
+
+
+
+
 // Modified fetch function to handle CORS properly
 async function fetchDashboardData() {
     loadingOverlay.style.display = 'flex';
@@ -137,6 +147,19 @@ async function fetchDashboardData() {
         loadingOverlay.style.display = 'none';
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function updateDashboard(data) {
     if (data.status === 'success') {
