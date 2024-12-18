@@ -99,20 +99,30 @@ function initializeReportsTable() {
     `;
 }
 
-// Data Fetching and Updates
+
+
 async function fetchDashboardData() {
     loadingOverlay.style.display = 'flex';
     try {
+        console.log('Fetching from:', API_URL);
         const response = await fetch(`${API_URL}?action=getStats`);
+        console.log('Response:', response);
         const data = await response.json();
+        console.log('Data:', data);
         updateDashboard(data);
     } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Detailed error:', error);
         alert('Error loading dashboard data. Please try again.');
     } finally {
         loadingOverlay.style.display = 'none';
     }
 }
+
+
+
+
+
+
 
 function updateDashboard(data) {
     updateStats(data);
