@@ -14,7 +14,7 @@
             <option>In Progress</option>
             <option>Complete</option>
         </select>
-        <button onclick="testUpdate()">Test Update</button>
+        <button onclick="updateStatus()">Update Status</button>
     </div>
 
     <div id="result" style="margin-top: 20px;"></div>
@@ -26,18 +26,24 @@
             return status.split(' ').join('+').toUpperCase();
         }
 
-        function testUpdate() {
+        async function updateStatus() {
             const status = document.getElementById('statusSelect').value;
             const sanitizedStatus = sanitizeStatus(status);
             const resultDiv = document.getElementById('result');
-            
-            // Create the URL with all parameters
-            const url = `${API_URL}?action=updateCell&partId=6&columnName=Status&newValue=${sanitizedStatus}`;
-            
-            // Open the URL in a new window/tab
-            window.open(url, '_blank');
-            
-            resultDiv.textContent = 'Update request sent. Check the new tab and the sheet.';
+            resultDiv.textContent = 'Updating...';
+
+            try {
+                const response = await fetch(
+                    `${API_URL}?action=updateStatus&partId=6&columnName=Status&newValue=${sanitizedStatus}`
+                );
+                
+                const data = await response.json();
+                resultDiv.textContent = 'Response: ' + JSON.stringify(data);
+
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+                console.error(error);
+            }
         }
     </script>
 </body>
