@@ -468,14 +468,13 @@ function applyFilters() {
        const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
         console.log('Location match?', matchesLocation, 'for report location:', report.Location);
        const matchesTime = timeFrame === 0 ? true : moment(report.Timestamp).isAfter(cutoffDate);
-       const statusNormalized = status.toLowerCase().replace(/\s+/g, '');
-const reportStatusNormalized = (report.Status || '').toLowerCase().replace(/\s+/g, '');
+const sanitizedFilterStatus = sanitizeStatus(status);
 console.log('Status comparison:', {
-    selected: statusNormalized,
-    report: reportStatusNormalized,
-    matches: !status || reportStatusNormalized === statusNormalized
+    filter: sanitizedFilterStatus,
+    report: report.Status,
+    matches: !status || report.Status === sanitizedFilterStatus
 });
-const matchesStatus = !status || report.Status === sanitizeStatus(status);
+const matchesStatus = !status || report.Status === sanitizedFilterStatus;
         const matchesEquipment = !equipment || 
             report.Equipment.toLowerCase().includes(equipment);
 
