@@ -249,21 +249,31 @@ async function fetchData() {
         
         
      
+
 // Update status for a report
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
         const sanitizedStatus = sanitizeStatus(newStatus);
+        console.log('Updating status to:', sanitizedStatus);
         
         // First update the status
         const statusUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizedStatus}`;
-        await fetch(statusUrl);
+        console.log('Status update URL:', statusUrl);
+        const statusResponse = await fetch(statusUrl);
+        const statusData = await statusResponse.json();
+        console.log('Status update response:', statusData);
 
         // If status is Complete, also update the completion timestamp
         if (sanitizedStatus === 'COMPLETE') {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
-            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket+Closed&newValue=${encodeURIComponent(now)}`;
-            await fetch(completionUrl);
+            console.log('Setting completion timestamp:', now);
+            
+            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${encodeURIComponent(now)}`;
+            console.log('Completion update URL:', completionUrl);
+            const completionResponse = await fetch(completionUrl);
+            const completionData = await completionResponse.json();
+            console.log('Completion update response:', completionData);
         }
 
         // Refresh data immediately after getting response
@@ -276,6 +286,11 @@ async function updateStatus(partId, newStatus) {
         toggleLoading(false);
     }
 }
+
+
+
+
+
 
 
         
