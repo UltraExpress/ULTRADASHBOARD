@@ -104,10 +104,11 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Time Period</label>
-                        <select id="timeFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            <option value="7">Last 7 Days</option>
-                            <option value="30">Last 30 Days</option>
-                        </select>
+<select id="timeFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+    <option value="7">Last 7 Days</option>
+    <option value="30">Last 30 Days</option>
+    <option value="0">All Time</option>
+</select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Status</label>
@@ -466,7 +467,7 @@ function applyFilters() {
     filteredReports = allReports.filter(report => {
        const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
         console.log('Location match?', matchesLocation, 'for report location:', report.Location);
-        const matchesTime = moment(report.Timestamp).isAfter(cutoffDate);
+       const matchesTime = timeFrame === 0 ? true : moment(report.Timestamp).isAfter(cutoffDate);
        const statusNormalized = status.toLowerCase().replace(/\s+/g, '');
 const reportStatusNormalized = (report.Status || '').toLowerCase().replace(/\s+/g, '');
 console.log('Status comparison:', {
