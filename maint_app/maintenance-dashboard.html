@@ -172,21 +172,12 @@
     </div>
 
     <script>
-
-
-
-
-
-// Configuration
+        // Configuration
         const API_URL = 'https://script.google.com/macros/s/AKfycbzL9ffrICvYzdGEnDoj_DV2zoJZQC2wPigydwaG4MZLwAboOwPGBC3BJFsVFn8qt8x0Ww/exec';
         const ITEMS_PER_PAGE = 10;
-        const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
         let currentPage = 1;
         let allReports = [];
         let filteredReports = [];
-        let refreshTimer = null;
-        let lastUserInteraction = Date.now();
-
 
         
         
