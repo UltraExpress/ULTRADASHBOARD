@@ -426,9 +426,13 @@ function updateTable() {
             const partName = (report['Part Name'] || '').split('+').join(' ');
 
             return `
-                <tr class="hover:bg-gray-50">
+                <tr class="${status === 'Complete' ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        ${getDateDisplay(report.Timestamp)}
+                        ${status === 'Complete' ? `
+                            <div class="p-2">
+                                <div class="text-sm">${moment(report.Timestamp).format('MMM D, h:mm A')}</div>
+                                <div class="text-xs text-gray-500">Completed</div>
+                            </div>` : getDateDisplay(report.Timestamp)}
                     </td>
                     <td class="px-6 py-4">${location}</td>
                     <td class="px-6 py-4">${partName}</td>
@@ -437,6 +441,11 @@ function updateTable() {
                             ${status}
                         </span>
                     </td>
+
+
+
+
+                    
                     <td class="px-6 py-4">
 <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
         onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value))">
