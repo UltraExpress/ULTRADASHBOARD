@@ -254,27 +254,44 @@ async function fetchData() {
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
-        // First update the status exactly as before
-        const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
-        await fetch(url);
+        // First update the status
+        const statusUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${newStatus}`;
+        console.log('Status update URL:', statusUrl);
+        const statusResponse = await fetch(statusUrl);
+        const statusData = await statusResponse.json();
+        console.log('Status update response:', statusData);
 
-        // If Complete, add a timestamp to the Ticket Closed column
-        if (sanitizeStatus(newStatus) === 'COMPLETE') {
+        // If status is COMPLETE, update the Ticket Closed timestamp
+        if (newStatus === 'COMPLETE') {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
-            const closeUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
-            console.log('Close timestamp URL:', closeUrl); // To verify URL structure
-            await fetch(closeUrl);
+            const closedUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
+            console.log('Ticket closed update URL:', closedUrl);
+            const closedResponse = await fetch(closedUrl);
+            const closedData = await closedResponse.json();
+            console.log('Ticket closed update response:', closedData);
         }
 
-        // Refresh data immediately after getting response
+        // Refresh data after all updates are complete
         await fetchData();
-
     } catch (error) {
         console.error('Error updating status:', error);
         alert('Error updating status. Please try again.');
     } finally {
         toggleLoading(false);
     }
+}
+
+// Additionally, update the dropdown HTML in the updateTable function to match:
+function getStatusDropdown(report) {
+    return `
+        <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+                onchange="updateStatus('${report['Part ID']}', this.value)">
+            <option value="NEEDS WORK" ${report.Status === 'NEEDS WORK' ? 'selected' : ''}>Needs Work</option>
+            <option value="PARTS ON ORDER" ${report.Status === 'PARTS ON ORDER' ? 'selected' : ''}>Parts On Order</option>
+            <option value="IN PROGRESS" ${report.Status === 'IN PROGRESS' ? 'selected' : ''}>In Progress</option>
+            <option value="COMPLETE" ${report.Status === 'COMPLETE' ? 'selected' : ''}>Complete</option>
+        </select>
+    `;
 }
 
 
