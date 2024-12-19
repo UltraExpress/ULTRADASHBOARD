@@ -454,6 +454,7 @@ function updateTable() {
         
         // Apply filters to the data
 // Apply filters to the data
+// Apply filters to the data
 function applyFilters() {
     const location = document.getElementById('locationFilter').value;
     const timeFrame = parseInt(document.getElementById('timeFilter').value);
@@ -461,20 +462,27 @@ function applyFilters() {
     const equipment = document.getElementById('equipmentSearch').value.toLowerCase();
     const cutoffDate = moment().subtract(timeFrame, 'days');
 
-    console.log('Selected location:', location);
-    console.log('Sample report location:', allReports[0]?.Location);
+    console.log('Filter values:', {
+        location,
+        timeFrame,
+        status,
+        equipment
+    });
 
     filteredReports = allReports.filter(report => {
-       const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
-        console.log('Location match?', matchesLocation, 'for report location:', report.Location);
-       const matchesTime = timeFrame === 0 ? true : moment(report.Timestamp).isAfter(cutoffDate);
-const sanitizedFilterStatus = sanitizeStatus(status);
-console.log('Status comparison:', {
-    filter: sanitizedFilterStatus,
-    report: report.Status,
-    matches: !status || report.Status === sanitizedFilterStatus
-});
-const matchesStatus = !status || report.Status === sanitizedFilterStatus;
+        const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
+        const matchesTime = timeFrame === 0 ? true : moment(report.Timestamp).isAfter(cutoffDate);
+        
+        // Status matching with detailed logging
+        console.log('Raw status from dropdown:', status);
+        const sanitizedFilterStatus = sanitizeStatus(status);
+        console.log('Status comparison:', {
+            filterStatus: sanitizedFilterStatus,
+            reportStatus: report.Status,
+            matches: !status || report.Status === sanitizedFilterStatus
+        });
+        const matchesStatus = !status || report.Status === sanitizedFilterStatus;
+        
         const matchesEquipment = !equipment || 
             report.Equipment.toLowerCase().includes(equipment);
 
@@ -484,9 +492,6 @@ const matchesStatus = !status || report.Status === sanitizedFilterStatus;
     currentPage = 1; // Reset to first page when filtering
     updateDashboard();
 }
-
-
-
 
 
 
