@@ -269,7 +269,8 @@ async function updateStatus(partId, newStatus) {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
             console.log('Setting completion timestamp:', now);
             
-            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${encodeURIComponent(now)}`;
+            // Using "Ticket_Closed" for the column name
+            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket_Closed&newValue=${encodeURIComponent(now)}`;
             console.log('Completion update URL:', completionUrl);
             const completionResponse = await fetch(completionUrl);
             const completionData = await completionResponse.json();
@@ -286,7 +287,6 @@ async function updateStatus(partId, newStatus) {
         toggleLoading(false);
     }
 }
-
 
 
 
