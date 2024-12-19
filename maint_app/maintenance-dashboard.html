@@ -269,12 +269,8 @@ const data = await response.json();
         
        
 function sanitizeStatus(status) {
-    // First remove any existing plus signs, then normalize
-    return status
-        .split('+').join(' ')  // Replace any existing + with spaces
-        .trim()                // Remove extra spaces
-        .split(' ').join('+')  // Add + between words
-        .toUpperCase();        // Convert to uppercase
+    // Just trim and uppercase, no plus signs needed anymore
+    return status.trim();  // No conversion needed since dropdown values already match
 }   
         
         
