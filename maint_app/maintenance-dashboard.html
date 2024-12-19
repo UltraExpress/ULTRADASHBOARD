@@ -87,7 +87,7 @@
         <!-- Main Content -->
         <div class="max-w-7xl mx-auto px-4 py-6">
             <!-- Stats Overview -->
-            <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+            <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <!-- Stats cards will be inserted here -->
             </div>
 
@@ -315,28 +315,41 @@ function updateStats() {
             complete: filteredReports.filter(r => String(r.Status).includes('COMPLETE')).length
         };
         
-        document.getElementById('statsContainer').innerHTML = `
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-gray-500">Total Reports</div>
-                <div class="text-3xl font-bold">${stats.total}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-red-500">Needs Work</div>
-                <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-indigo-500">Parts On Order</div>
-                <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-yellow-500">In Progress</div>
-                <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-green-500">Complete</div>
-                <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
-            </div>
-        `;
+// Only modifying the HTML template inside updateStats:
+document.getElementById('statsContainer').innerHTML = `
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500">Total Reports</div>
+        <div class="text-3xl font-bold">${stats.total}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-red-500">Needs Work</div>
+        <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-indigo-500">Parts On Order</div>
+        <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-yellow-500">In Progress</div>
+        <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-green-500">Complete</div>
+        <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-blue-500">Avg Days to Complete</div>
+        <div class="text-3xl font-bold text-blue-500">-</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-purple-500">Avg Daily Tickets</div>
+        <div class="text-3xl font-bold text-purple-500">-</div>
+    </div>
+`;
+
+
+
+        
     } catch (error) {
         console.error('Error in updateStats:', error);
         throw error;
