@@ -93,7 +93,7 @@
 
             <!-- Filters -->
             <div class="bg-white rounded-lg shadow p-4 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Location</label>
                         <select id="locationFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -125,6 +125,13 @@
                         <input type="text" id="equipmentSearch" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
                                placeholder="Search by part/equipment...">
                     </div>
+                    <div>
+    <label class="block text-sm font-medium text-gray-700">Sort Order</label>
+    <select id="sortOrderFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+        <option value="newest">Date (Newest First)</option>
+        <option value="oldest">Date (Oldest First)</option>
+    </select>
+</div>
                 </div>
             </div>
 
@@ -453,41 +460,35 @@ function updateTable() {
 
         
         // Apply filters to the data
-// Apply filters to the data
-// Apply filters to the data
+
 function applyFilters() {
     const location = document.getElementById('locationFilter').value;
     const timeFrame = parseInt(document.getElementById('timeFilter').value);
     const status = document.getElementById('statusFilter').value;
     const equipment = document.getElementById('equipmentSearch').value.toLowerCase();
+    const sortOrder = document.getElementById('sortOrderFilter').value;  // New: get sort order
     const cutoffDate = moment().subtract(timeFrame, 'days');
 
     console.log('Filter values:', {
         location,
         timeFrame,
         status,
-        equipment
+        equipment,
+        sortOrder
     });
 
     filteredReports = allReports.filter(report => {
         const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
         const matchesTime = timeFrame === 0 ? true : moment(report.Timestamp).isAfter(cutoffDate);
-        
-        // Status matching with detailed logging
-        console.log('Raw status from dropdown:', status);
-        const sanitizedFilterStatus = sanitizeStatus(status);
-        console.log('Status comparison:', {
-            filterStatus: sanitizedFilterStatus,
-            reportStatus: report.Status,
-            matches: !status || report.Status === sanitizedFilterStatus
-        });
-        const matchesStatus = !status || report.Status === sanitizedFilterStatus;
-        
+        const matchesStatus = !status || report.Status === sanitizeStatus(status);
         const matchesEquipment = !equipment || 
             report.Equipment.toLowerCase().includes(equipment);
 
         return matchesLocation && matchesTime && matchesStatus && matchesEquipment;
     });
+
+    // New: Apply sorting after filtering
+    filteredReports = sortReports(filteredReports, sortOrder);
 
     currentPage = 1; // Reset to first page when filtering
     updateDashboard();
@@ -538,6 +539,7 @@ function updateDashboard() {
             document.getElementById('timeFilter').addEventListener('change', applyFilters);
             document.getElementById('statusFilter').addEventListener('change', applyFilters);
             document.getElementById('equipmentSearch').addEventListener('input', debounce(applyFilters, 300));
+            document.getElementById('sortOrderFilter').addEventListener('change', applyFilters);
 
             // Pagination handlers
             document.getElementById('prevPage').addEventListener('click', () => {
@@ -558,7 +560,14 @@ function updateDashboard() {
 
 
 
-
+// Sort function for reports
+function sortReports(reports, sortOrder) {
+    return [...reports].sort((a, b) => {
+        const dateA = moment(a.Timestamp);
+        const dateB = moment(b.Timestamp);
+        return sortOrder === 'oldest' ? dateA - dateB : dateB - dateA;
+    });
+}
 
 
 
