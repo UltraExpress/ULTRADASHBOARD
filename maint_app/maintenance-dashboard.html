@@ -181,6 +181,21 @@
 
         
         
+
+
+
+
+function showImageModal(imageUrl) {
+    document.getElementById('modalImage').src = imageUrl;
+    document.getElementById('imageModal').classList.remove('hidden');
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+    document.getElementById('modalImage').src = '';
+}
+
+
         
         
         
@@ -502,9 +517,20 @@ function updateTable() {
         </td>
         <td class="px-6 py-4">
             ${report['Photo Link'] || report['Video Link'] ? `
-                ${report['Photo Link'] ? `
-                    <a href="${report['Photo Link']}" target="_blank" class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
-                ` : ''}
+             
+
+
+
+
+${report['Photo Link'] ? `
+    <a href="#" onclick="showImageModal('${report['Photo Link']}'); return false;" 
+       class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
+` : ''}
+
+
+
+
+                
                 ${report['Video Link'] ? `
                     <a href="${report['Video Link']}" target="_blank" class="text-blue-600 hover:text-blue-900">🎥 Video</a>
                 ` : ''}
@@ -690,5 +716,18 @@ function sortReports(reports, sortOrder) {
             }
         }
     </script>
+    
+    
+    
+    <!-- Simple Image Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4" style="z-index: 9999;">
+    <div class="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] w-full relative">
+        <button onclick="closeImageModal()" class="absolute right-2 top-2 text-xl p-2">×</button>
+        <img id="modalImage" src="" alt="Maintenance Photo" class="w-full h-auto">
+    </div>
+</div>
+
+
+    
 </body>
 </html>
