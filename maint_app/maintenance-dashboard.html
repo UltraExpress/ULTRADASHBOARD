@@ -255,26 +255,23 @@ async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
         const sanitizedStatus = sanitizeStatus(newStatus);
-        console.log('Updating status to:', sanitizedStatus);
         
         // First update the status
         const statusUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizedStatus}`;
-        console.log('Status update URL:', statusUrl);
         const statusResponse = await fetch(statusUrl);
         const statusData = await statusResponse.json();
-        console.log('Status update response:', statusData);
+        console.log('Status update success:', statusData);
 
         // If status is Complete, also update the completion timestamp
         if (sanitizedStatus === 'COMPLETE') {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
-            console.log('Setting completion timestamp:', now);
-            
-            // Using "Ticket_Closed" for the column name
-            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket_Closed&newValue=${encodeURIComponent(now)}`;
-            console.log('Completion update URL:', completionUrl);
+            // Properly encode the column name "Ticket Closed" 
+            const encodedColumnName = encodeURIComponent('Ticket Closed');
+            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=${encodedColumnName}&newValue=${encodeURIComponent(now)}`;
+            console.log('Attempting timestamp update with URL:', completionUrl);
             const completionResponse = await fetch(completionUrl);
             const completionData = await completionResponse.json();
-            console.log('Completion update response:', completionData);
+            console.log('Timestamp update response:', completionData);
         }
 
         // Refresh data immediately after getting response
@@ -287,7 +284,6 @@ async function updateStatus(partId, newStatus) {
         toggleLoading(false);
     }
 }
-
 
 
 
