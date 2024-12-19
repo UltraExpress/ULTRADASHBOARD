@@ -306,66 +306,76 @@ function sanitizeStatus(status) {
         // Update stats cards
 function updateStats() {
     try {
+        // Debug logging
+        console.log('Filtered Reports:', filteredReports.map(r => ({
+            location: r.Location,
+            status: r.Status
+        })));
+        
         const stats = {
             total: allReports.length,
             needsWork: filteredReports.filter(r => r.Status === 'Needs Work').length,
             partsOnOrder: filteredReports.filter(r => r.Status === 'Parts On Order').length,
             inProgress: filteredReports.filter(r => r.Status === 'In Progress').length,
             complete: filteredReports.filter(r => r.Status === 'Complete').length,
-            // Add calculations for open work orders by site
+            // Debug logging to check data
             openByLocation: {
-                riverside: filteredReports.filter(r => 
-                    r.Location === 'Riverside' && r.Status !== 'Complete'
-                ).length,
-                santaAna: filteredReports.filter(r => 
-                    r.Location === 'Santa Ana' && r.Status !== 'Complete'
-                ).length
+                riverside: filteredReports.filter(r => {
+                    const isRiverside = r.Location && r.Location.trim().toUpperCase() === 'RIVERSIDE';
+                    const isNotComplete = r.Status !== 'Complete';
+                    return isRiverside && isNotComplete;
+                }).length,
+                santaAna: filteredReports.filter(r => {
+                    const isSantaAna = r.Location && r.Location.trim().toUpperCase() === 'SANTA ANA';
+                    const isNotComplete = r.Status !== 'Complete';
+                    return isSantaAna && isNotComplete;
+                }).length
             }
         };
 
         document.getElementById('statsContainer').innerHTML = `
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-gray-500">Total Reports</div>
-        <div class="text-3xl font-bold">${stats.total}</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-red-500">Needs Work</div>
-        <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-indigo-500">Parts On Order</div>
-        <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-yellow-500">In Progress</div>
-        <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-green-500">Complete</div>
-        <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-blue-500">Avg Days to Complete</div>
-        <div class="text-3xl font-bold text-blue-500">-</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-purple-500">Avg New Daily Tickets</div>
-        <div class="text-3xl font-bold text-purple-500">-</div>
-    </div>
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-indigo-500 mb-1">Open Work Orders</div>
-        <div class="flex justify-between">
-            <div>
-                <div class="text-4xl text-indigo-500">${stats.openByLocation.riverside}</div>
-                <div class="text-sm text-indigo-500">RIVERSIDE</div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-gray-600">Total Reports</div>
+                <div class="text-4xl font-bold">${stats.total}</div>
             </div>
-            <div>
-                <div class="text-4xl text-indigo-500">${stats.openByLocation.santaAna}</div>
-                <div class="text-sm text-indigo-500">SANTA ANA</div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-red-500">Needs Work</div>
+                <div class="text-4xl font-bold text-red-500">${stats.needsWork}</div>
             </div>
-        </div>
-    </div>
-`;
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-blue-600">Parts On Order</div>
+                <div class="text-4xl font-bold text-blue-600">${stats.partsOnOrder}</div>
+            </div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-yellow-500">In Progress</div>
+                <div class="text-4xl font-bold text-yellow-500">${stats.inProgress}</div>
+            </div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-green-500">Complete</div>
+                <div class="text-4xl font-bold text-green-500">${stats.complete}</div>
+            </div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-blue-500">Avg Days to Complete</div>
+                <div class="text-4xl font-bold text-blue-500">-</div>
+            </div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-purple-500">Avg New Daily Tickets</div>
+                <div class="text-4xl font-bold text-purple-500">-</div>
+            </div>
+            <div class="md:col-span-2 bg-white rounded-lg p-6">
+                <div class="text-blue-600">Open Work Orders</div>
+                <div class="flex justify-between mt-2">
+                    <div>
+                        <div class="text-4xl font-bold text-blue-600">${stats.openByLocation.riverside}</div>
+                        <div class="text-sm text-blue-600">RIVERSIDE</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold text-blue-600">${stats.openByLocation.santaAna}</div>
+                        <div class="text-sm text-blue-600">SANTA ANA</div>
+                    </div>
+                </div>
+            </div>
+        `;
     } catch (error) {
         console.error('Error in updateStats:', error);
         throw error;
