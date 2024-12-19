@@ -254,24 +254,16 @@ async function fetchData() {
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
-        const sanitizedStatus = sanitizeStatus(newStatus);
-        
-        // First update the status
-        const statusUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizedStatus}`;
-        const statusResponse = await fetch(statusUrl);
-        const statusData = await statusResponse.json();
-        console.log('Status update success:', statusData);
+        // First update the status exactly as before
+        const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
+        await fetch(url);
 
-        // If status is Complete, also update the completion timestamp
-        if (sanitizedStatus === 'COMPLETE') {
+        // If Complete, add a timestamp to the Ticket Closed column
+        if (sanitizeStatus(newStatus) === 'COMPLETE') {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
-            // Properly encode the column name "Ticket Closed" 
-            const encodedColumnName = encodeURIComponent('Ticket Closed');
-            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=${encodedColumnName}&newValue=${encodeURIComponent(now)}`;
-            console.log('Attempting timestamp update with URL:', completionUrl);
-            const completionResponse = await fetch(completionUrl);
-            const completionData = await completionResponse.json();
-            console.log('Timestamp update response:', completionData);
+            const closeUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
+            console.log('Close timestamp URL:', closeUrl); // To verify URL structure
+            await fetch(closeUrl);
         }
 
         // Refresh data immediately after getting response
