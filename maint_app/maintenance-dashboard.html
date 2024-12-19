@@ -474,7 +474,7 @@ console.log('Status comparison:', {
     report: reportStatusNormalized,
     matches: !status || reportStatusNormalized === statusNormalized
 });
-const matchesStatus = !status || reportStatusNormalized === statusNormalized;
+const matchesStatus = !status || report.Status === sanitizeStatus(status);
         const matchesEquipment = !equipment || 
             report.Equipment.toLowerCase().includes(equipment);
 
