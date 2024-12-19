@@ -253,12 +253,18 @@ async function fetchData() {
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
-        // Create the URL with parameters
-      
-const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
+        const sanitizedStatus = sanitizeStatus(newStatus);
+        
+        // First update the status
+        const statusUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizedStatus}`;
+        await fetch(statusUrl);
 
-const response = await fetch(url);
-const data = await response.json();
+        // If status is Complete, also update the completion timestamp
+        if (sanitizedStatus === 'COMPLETE') {
+            const now = moment().format('MM/DD/YYYY HH:mm:ss');
+            const completionUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket+Closed&newValue=${encodeURIComponent(now)}`;
+            await fetch(completionUrl);
+        }
 
         // Refresh data immediately after getting response
         await fetchData();
@@ -270,7 +276,6 @@ const data = await response.json();
         toggleLoading(false);
     }
 }
-
 
 
         
