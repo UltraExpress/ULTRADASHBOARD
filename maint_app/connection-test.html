@@ -1,49 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Status Update Test</title>
+    <title>Column Write Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 </head>
 <body>
-    <h2>Status Update Test</h2>
-    
-    <div>
-        <p>Part ID: 6 (Protect)</p>
-        <select id="statusSelect">
-            <option>Needs Work</option>
-            <option>Parts On Order</option>
-            <option>In Progress</option>
-            <option>Complete</option>
-        </select>
-        <button onclick="updateStatus()">Update Status</button>
-    </div>
-
-    <div id="result" style="margin-top: 20px;"></div>
+    <h2>Test Writing to Ticket Closed Column</h2>
+    <button onclick="testStatusUpdate()">Test Status Update (Working)</button>
+    <button onclick="testClosedUpdate()">Test Ticket Closed Update</button>
+    <div id="results"></div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbzL9ffrICvYzdGEnDoj_DV2zoJZQC2wPigydwaG4MZLwAboOwPGBC3BJFsVFn8qt8x0Ww/exec';
-
-        function sanitizeStatus(status) {
-            return status.split(' ').join('+').toUpperCase();
+        
+        // This is the working status update we know works
+        async function testStatusUpdate() {
+            const url = `${API_URL}?action=updateStatus&partId=6&columnName=Status&newValue=COMPLETE`;
+            console.log('Testing status update URL:', url);
+            const response = await fetch(url);
+            const data = await response.json();
+            document.getElementById('results').innerHTML = 'Status Update Response: ' + JSON.stringify(data);
         }
 
-        async function updateStatus() {
-            const status = document.getElementById('statusSelect').value;
-            const sanitizedStatus = sanitizeStatus(status);
-            const resultDiv = document.getElementById('result');
-            resultDiv.textContent = 'Updating...';
-
-            try {
-                const response = await fetch(
-                    `${API_URL}?action=updateStatus&partId=6&columnName=Status&newValue=${sanitizedStatus}`
-                );
-                
-                const data = await response.json();
-                resultDiv.textContent = 'Response: ' + JSON.stringify(data);
-
-            } catch (error) {
-                resultDiv.textContent = 'Error: ' + error.message;
-                console.error(error);
-            }
+        // This is our test for the closed column
+        async function testClosedUpdate() {
+            const now = moment().format('MM/DD/YYYY HH:mm:ss');
+            const url = `${API_URL}?action=updateStatus&partId=6&columnName=Ticket Closed&newValue=${now}`;
+            console.log('Testing closed update URL:', url);
+            const response = await fetch(url);
+            const data = await response.json();
+            document.getElementById('results').innerHTML = 'Closed Update Response: ' + JSON.stringify(data);
         }
     </script>
 </body>
