@@ -203,6 +203,15 @@
 const MAX_RETRIES = 3;
 let isUploading = false;
 
+
+function sanitizeStatus(status) {
+    // Just convert to uppercase and ensure consistent spacing
+    return status.trim().toUpperCase();
+}
+
+
+        
+
         // Parts loading configuration
         const CHECKLIST_URLS = {
             'RIVERSIDE': 'https://ultraexpress.github.io/QC/riverside-checklist.json',
