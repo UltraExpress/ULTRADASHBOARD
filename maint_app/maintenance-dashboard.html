@@ -491,32 +491,19 @@ function updateTable() {
 
 function applyFilters() {
     const location = document.getElementById('locationFilter').value;
-    const timeFrame = parseInt(document.getElementById('timeFilter').value;
+    const timeFrame = parseInt(document.getElementById('timeFilter').value);
     const status = document.getElementById('statusFilter').value;
-    
-    // Simple status mapping from dropdown to sheet values
-    const statusMap = {
-        'NEEDS WORK': 'Needs Work',
-        'PARTS ON ORDER': 'Parts On Order',
-        'IN PROGRESS': 'In Progress',
-        'COMPLETE': 'Complete'
-    };
+    const equipment = document.getElementById('equipmentSearch').value.toLowerCase();
+    const sortOrder = document.getElementById('sortOrderFilter').value;  // New: get sort order
+    const cutoffDate = moment().subtract(timeFrame, 'days');
 
-    filteredReports = allReports.filter(report => {
-        const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
-        const matchesTime = timeFrame === 0 ? true : moment(report.Timestamp).isAfter(cutoffDate);
-        // Exact match using the mapping
-        const matchesStatus = !status || report.Status === statusMap[status];
-        const matchesEquipment = !equipment || report.Equipment?.toLowerCase().includes(equipment);
-
-        return matchesLocation && matchesTime && matchesStatus && matchesEquipment;
+    console.log('Filter values:', {
+        location,
+        timeFrame,
+        status,
+        equipment,
+        sortOrder
     });
-
-
-
-
-
-    
 
     filteredReports = allReports.filter(report => {
         const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
