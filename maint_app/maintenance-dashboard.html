@@ -249,21 +249,28 @@ async function fetchData() {
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
+        // Get the current report to check if it was previously Complete
+        const currentReport = allReports.find(r => r['Part ID'] === partId);
+        const wasComplete = currentReport && currentReport.Status === 'Complete';
+        
         // First do the status update exactly as before
         const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
-        console.log('Status being set to:', newStatus, 'Sanitized to:', sanitizeStatus(newStatus)); // More detailed logging
+        console.log('Status being set to:', newStatus, 'Sanitized to:', sanitizeStatus(newStatus));
         await fetch(url);
 
-        // Check if it's complete (compare with exactly how it appears in dropdown)
-        if (newStatus === 'Complete') {  // Changed from checking sanitized version
+        // If moving TO Complete status (existing logic)
+        if (newStatus === 'Complete') {
             console.log('Status is Complete, writing timestamp...');
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
             const timestampUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
-            console.log('Timestamp URL:', timestampUrl);
             await fetch(timestampUrl);
-            console.log('Timestamp write completed');
-        } else {
-            console.log('Status is not Complete:', newStatus);
+        }
+        // NEW: If moving FROM Complete to any other status
+        else if (wasComplete) {
+            console.log('Moving from Complete to another status, updating start timestamp...');
+            const now = moment().format('MM/DD/YYYY HH:mm:ss');
+            const timestampUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Timestamp&newValue=${now}`;
+            await fetch(timestampUrl);
         }
 
         await fetchData();
