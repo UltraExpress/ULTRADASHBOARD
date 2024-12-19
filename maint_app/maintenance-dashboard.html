@@ -247,24 +247,24 @@ async function fetchData() {
        
         
         
-     async function updateStatus(partId, newStatus) {
+async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
         // First do the status update exactly as before
         const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
-        console.log('Status being set to:', sanitizeStatus(newStatus)); // Debug log
+        console.log('Status being set to:', newStatus, 'Sanitized to:', sanitizeStatus(newStatus)); // More detailed logging
         await fetch(url);
 
-        // If COMPLETE, then write timestamp
-        if (sanitizeStatus(newStatus) === 'COMPLETE') {
-            console.log('Status is COMPLETE, writing timestamp...'); // Debug log
+        // Check if it's complete (compare with exactly how it appears in dropdown)
+        if (newStatus === 'Complete') {  // Changed from checking sanitized version
+            console.log('Status is Complete, writing timestamp...');
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
             const timestampUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
-            console.log('Timestamp URL:', timestampUrl);  // Debug log
+            console.log('Timestamp URL:', timestampUrl);
             await fetch(timestampUrl);
-            console.log('Timestamp write completed'); // Debug log
+            console.log('Timestamp write completed');
         } else {
-            console.log('Status is not COMPLETE, no timestamp needed'); // Debug log
+            console.log('Status is not Complete:', newStatus);
         }
 
         await fetchData();
@@ -274,7 +274,7 @@ async function fetchData() {
     } finally {
         toggleLoading(false);
     }
-}   
+}  
      
 
 
