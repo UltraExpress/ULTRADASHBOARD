@@ -307,12 +307,16 @@ function sanitizeStatus(status) {
 function updateStats() {
     try {
         const stats = {
-            total: filteredReports.length,
+            total: allReports.length,  // Changed to use allReports for total count
             needsWork: filteredReports.filter(r => r.Status === 'Needs Work').length,
             partsOnOrder: filteredReports.filter(r => r.Status === 'Parts On Order').length,
             inProgress: filteredReports.filter(r => r.Status === 'In Progress').length,
             complete: filteredReports.filter(r => r.Status === 'Complete').length
         };
+        // ... rest of function remains the same
+
+
+        
         
 // Only modifying the HTML template inside updateStats:
 document.getElementById('statsContainer').innerHTML = `
