@@ -252,27 +252,21 @@ async function fetchData() {
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
-        // First update the status
-        const statusUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
-        console.log('Status update URL:', statusUrl);
-        const statusResponse = await fetch(statusUrl);
-        const statusData = await statusResponse.json();
-        console.log('Status update response:', statusData);
+        // First do the status update exactly as before
+        const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
+        await fetch(url);
 
-        // If Complete, update the timestamp
+        // If COMPLETE, then write timestamp in exact same way as test
         if (sanitizeStatus(newStatus) === 'COMPLETE') {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
-            const closedUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
-            console.log('Attempting to write timestamp with URL:', closedUrl);
-            const response = await fetch(closedUrl);
-            const data = await response.json();
-            console.log('Timestamp write response:', data);
+            const timestampUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${encodeURIComponent(now)}`;
+            console.log('Writing timestamp:', timestampUrl);
+            await fetch(timestampUrl);
         }
 
-        // Refresh data after all updates complete
         await fetchData();
     } catch (error) {
-        console.error('Error updating status:', error);
+        console.error('Error:', error);
         alert('Error updating status. Please try again.');
     } finally {
         toggleLoading(false);
