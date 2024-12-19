@@ -307,19 +307,23 @@ function sanitizeStatus(status) {
 function updateStats() {
     try {
         const stats = {
-            total: allReports.length,  // Changed to use allReports for total count
+            total: allReports.length,
             needsWork: filteredReports.filter(r => r.Status === 'Needs Work').length,
             partsOnOrder: filteredReports.filter(r => r.Status === 'Parts On Order').length,
             inProgress: filteredReports.filter(r => r.Status === 'In Progress').length,
-            complete: filteredReports.filter(r => r.Status === 'Complete').length
+            complete: filteredReports.filter(r => r.Status === 'Complete').length,
+            // Add calculations for open work orders by site
+            openByLocation: {
+                riverside: filteredReports.filter(r => 
+                    r.Location === 'Riverside' && r.Status !== 'Complete'
+                ).length,
+                santaAna: filteredReports.filter(r => 
+                    r.Location === 'Santa Ana' && r.Status !== 'Complete'
+                ).length
+            }
         };
-        // ... rest of function remains the same
 
-
-        
-        
-// Only modifying the HTML template inside updateStats:
-document.getElementById('statsContainer').innerHTML = `
+        document.getElementById('statsContainer').innerHTML = `
     <div class="bg-white rounded-lg shadow p-6">
         <div class="text-gray-500">Total Reports</div>
         <div class="text-3xl font-bold">${stats.total}</div>
@@ -348,11 +352,20 @@ document.getElementById('statsContainer').innerHTML = `
         <div class="text-purple-500">Avg New Daily Tickets</div>
         <div class="text-3xl font-bold text-purple-500">-</div>
     </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-indigo-500 mb-1">Open Work Orders</div>
+        <div class="flex justify-between">
+            <div>
+                <div class="text-4xl text-indigo-500">${stats.openByLocation.riverside}</div>
+                <div class="text-sm text-indigo-500">RIVERSIDE</div>
+            </div>
+            <div>
+                <div class="text-4xl text-indigo-500">${stats.openByLocation.santaAna}</div>
+                <div class="text-sm text-indigo-500">SANTA ANA</div>
+            </div>
+        </div>
+    </div>
 `;
-
-
-
-        
     } catch (error) {
         console.error('Error in updateStats:', error);
         throw error;
