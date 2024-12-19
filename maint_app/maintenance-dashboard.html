@@ -240,22 +240,20 @@ async function fetchData() {
         
         
         
-        
-        // Update status for a report
+     
+// Update status for a report
 async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
         // Create the URL with parameters
       
-const url = `${API_URL}?action=updateCell&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
+const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
 
 const response = await fetch(url);
+const data = await response.json();
 
-        // Since we're using no-cors, we can't read the response
-        // Instead, we'll refresh the data after a brief delay
-        setTimeout(() => {
-            fetchData(); // Refresh all data to show the update
-        }, 1000);
+        // Refresh data immediately after getting response
+        await fetchData();
 
     } catch (error) {
         console.error('Error updating status:', error);
