@@ -452,26 +452,31 @@ function updateTable() {
 
         
         // Apply filters to the data
-        function applyFilters() {
-            const location = document.getElementById('locationFilter').value;
-            const timeFrame = parseInt(document.getElementById('timeFilter').value);
-            const status = document.getElementById('statusFilter').value;
-            const equipment = document.getElementById('equipmentSearch').value.toLowerCase();
-            const cutoffDate = moment().subtract(timeFrame, 'days');
+// Apply filters to the data
+function applyFilters() {
+    const location = document.getElementById('locationFilter').value;
+    const timeFrame = parseInt(document.getElementById('timeFilter').value);
+    const status = document.getElementById('statusFilter').value;
+    const equipment = document.getElementById('equipmentSearch').value.toLowerCase();
+    const cutoffDate = moment().subtract(timeFrame, 'days');
 
-            filteredReports = allReports.filter(report => {
-                const matchesLocation = !location || report.Location === location;
-                const matchesTime = moment(report.Timestamp).isAfter(cutoffDate);
-                const matchesStatus = !status || report.Status === status;
-                const matchesEquipment = !equipment || 
-                    report.Equipment.toLowerCase().includes(equipment);
+    console.log('Selected location:', location);
+    console.log('Sample report location:', allReports[0]?.Location);
 
-                return matchesLocation && matchesTime && matchesStatus && matchesEquipment;
-            });
+    filteredReports = allReports.filter(report => {
+        const matchesLocation = !location || report.Location === location;
+        console.log('Location match?', matchesLocation, 'for report location:', report.Location);
+        const matchesTime = moment(report.Timestamp).isAfter(cutoffDate);
+        const matchesStatus = !status || report.Status === status;
+        const matchesEquipment = !equipment || 
+            report.Equipment.toLowerCase().includes(equipment);
 
-            currentPage = 1; // Reset to first page when filtering
-            updateDashboard();
-        }
+        return matchesLocation && matchesTime && matchesStatus && matchesEquipment;
+    });
+
+    currentPage = 1; // Reset to first page when filtering
+    updateDashboard();
+}
 
 
 
