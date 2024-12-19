@@ -442,64 +442,70 @@ function updateTable() {
             // Clean up part name (handle plus signs)
             const partName = (report['Part Name'] || '').split('+').join(' ');
 
-            return `
-                <tr class="${status === 'Complete' ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        ${status === 'Complete' ? `
-                            <div class="p-2">
-                                <div class="text-sm">${moment(report.Timestamp).format('MMM D, h:mm A')}</div>
-                                <div class="text-xs text-gray-500">Completed</div>
-                            </div>` : getDateDisplay(report.Timestamp)}
-                    </td>
-                    <td class="px-6 py-4">${location}</td>
-                    <td class="px-6 py-4">${partName}</td>
-                    <td class="px-6 py-4">
-
-
-
-
-
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(status)}">
-                            ${status}
-                        </span>
-                        ${status === 'Complete' ? `
-                            <div class="text-xs text-gray-500 mt-1">
-                                Time to complete: ${calculateCompletionTime(report.Timestamp, report['Ticket Closed'])}
-                            </div>
-                        ` : ''}
-                    </td>
-
-
-
-
-                    
-                    <td class="px-6 py-4">
-<select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
-        onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value))">
-                            <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
-                            <option ${status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
-                            <option ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                            <option ${status === 'Complete' ? 'selected' : ''}>Complete</option>
-                        </select>
-                    </td>
-                    <td class="px-6 py-4">
-                        ${report['Photo Link'] || report['Video Link'] ? `
-                            ${report['Photo Link'] ? `
-                                <a href="${report['Photo Link']}" target="_blank" class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
-                            ` : ''}
-                            ${report['Video Link'] ? `
-                                <a href="${report['Video Link']}" target="_blank" class="text-blue-600 hover:text-blue-900">🎥 Video</a>
-                            ` : ''}
-                        ` : 'No media'}
-                    </td>
-                    <td class="px-6 py-4">
-                        ${report.Notes ? `
-                            <button onclick="alert('${report.Notes}')" class="text-blue-600 hover:text-blue-900">View Notes</button>
-                        ` : 'No notes'}
-                    </td>
-                </tr>
-            `;
+            
+            
+            
+            
+            
+            
+            
+            
+          return `
+    <tr class="${status === 'Complete' ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}">
+        <td class="px-6 py-4 whitespace-nowrap">
+            ${status === 'Complete' ? `
+                <div class="p-2">
+                    <div class="text-sm">${moment(report.Timestamp).format('MMM D, h:mm A')}</div>
+                    <div class="text-xs text-gray-500">Completed: ${moment(report['Ticket Closed']).format('MMM D, h:mm A')}</div>
+                </div>` : getDateDisplay(report.Timestamp)}
+        </td>
+        <td class="px-6 py-4">${location}</td>
+        <td class="px-6 py-4">${partName}</td>
+        <td class="px-6 py-4">
+            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(status)}">
+                ${status}
+            </span>
+            ${status === 'Complete' ? `
+                <div class="text-xs text-gray-500 mt-1">
+                    Time to complete: ${calculateCompletionTime(report.Timestamp, report['Ticket Closed'])}
+                </div>
+            ` : ''}
+        </td>
+        <td class="px-6 py-4">
+            <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+                    onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value))">
+                <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
+                <option ${status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
+                <option ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                <option ${status === 'Complete' ? 'selected' : ''}>Complete</option>
+            </select>
+        </td>
+        <td class="px-6 py-4">
+            ${report['Photo Link'] || report['Video Link'] ? `
+                ${report['Photo Link'] ? `
+                    <a href="${report['Photo Link']}" target="_blank" class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
+                ` : ''}
+                ${report['Video Link'] ? `
+                    <a href="${report['Video Link']}" target="_blank" class="text-blue-600 hover:text-blue-900">🎥 Video</a>
+                ` : ''}
+            ` : 'No media'}
+        </td>
+        <td class="px-6 py-4">
+            ${report.Notes ? `
+                <button onclick="alert('${report.Notes}')" class="text-blue-600 hover:text-blue-900">View Notes</button>
+            ` : 'No notes'}
+        </td>
+    </tr>
+`;
+        
+        
+        
+        
+        
+        
+        
+        
+        
         }).join('');
 
         // Update pagination text
