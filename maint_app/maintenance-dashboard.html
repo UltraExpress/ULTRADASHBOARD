@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -309,10 +308,10 @@ function updateStats() {
     try {
         const stats = {
             total: filteredReports.length,
-            needsWork: filteredReports.filter(r => String(r.Status).includes('NEEDS')).length,
-            partsOnOrder: filteredReports.filter(r => String(r.Status).includes('PARTS')).length,
-            inProgress: filteredReports.filter(r => String(r.Status).includes('IN PROGRESS')).length,
-            complete: filteredReports.filter(r => String(r.Status).includes('COMPLETE')).length
+            needsWork: filteredReports.filter(r => r.Status === 'Needs Work').length,
+            partsOnOrder: filteredReports.filter(r => r.Status === 'Parts On Order').length,
+            inProgress: filteredReports.filter(r => r.Status === 'In Progress').length,
+            complete: filteredReports.filter(r => r.Status === 'Complete').length
         };
         
 // Only modifying the HTML template inside updateStats:
