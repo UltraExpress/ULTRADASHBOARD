@@ -247,7 +247,7 @@ async function updateStatus(partId, newStatus) {
     try {
         // Create the URL with parameters
       
-const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
+const url = `${API_URL}?action=updateCell&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
 
         // Make the POST request
         const response = await fetch(url, {
