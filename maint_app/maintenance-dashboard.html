@@ -464,7 +464,7 @@ function applyFilters() {
     console.log('Sample report location:', allReports[0]?.Location);
 
     filteredReports = allReports.filter(report => {
-        const matchesLocation = !location || report.Location === location;
+       const matchesLocation = !location || report.Location.toLowerCase().replace(/\s+/g, '') === location.toLowerCase().replace(/\s+/g, '');
         console.log('Location match?', matchesLocation, 'for report location:', report.Location);
         const matchesTime = moment(report.Timestamp).isAfter(cutoffDate);
         const matchesStatus = !status || report.Status === status;
