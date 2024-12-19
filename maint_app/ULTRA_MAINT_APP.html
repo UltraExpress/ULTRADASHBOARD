@@ -204,6 +204,17 @@ const MAX_RETRIES = 3;
 let isUploading = false;
 
 
+
+
+
+function generateRandomString() {
+    return '_r' + Math.random().toString(36).substring(2, 6);
+}
+
+
+        
+
+
 function sanitizeStatus(status) {
     // Just convert to uppercase and ensure consistent spacing
     return status.trim().toUpperCase();
@@ -539,17 +550,27 @@ document.getElementById('maintenanceForm').addEventListener('submit', async func
             });
         }
 
+        
+        
+        
+        
         // Prepare the basic form data
-        const formData = new FormData();
-        formData.append('name', document.getElementById('name').value);
-        formData.append('location', document.getElementById('location').value);
-        formData.append('partId', document.getElementById('part').value);
-        formData.append('partName', document.getElementById('part').options[document.getElementById('part').selectedIndex].text);
-        formData.append('status', document.getElementById('status').value);
-        formData.append('notes', document.getElementById('notes').value);
+const formData = new FormData();
+formData.append('name', document.getElementById('name').value);
+formData.append('location', document.getElementById('location').value);
+formData.append('partId', document.getElementById('part').value + generateRandomString());  // <-- MODIFIED
+formData.append('partName', document.getElementById('part').options[document.getElementById('part').selectedIndex].text);
+formData.append('status', document.getElementById('status').value);
+formData.append('notes', document.getElementById('notes').value);
         formData.append('latitude', currentPosition.latitude.toString());
         formData.append('longitude', currentPosition.longitude.toString());
         formData.append('timestamp', new Date().toISOString());
+
+
+
+
+
+        
 
         // Handle photo compression and upload
         if (photoData) {
