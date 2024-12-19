@@ -396,7 +396,24 @@ document.getElementById('statsContainer').innerHTML = `
 
         
         
-        
+        function calculateCompletionTime(startDate, endDate) {
+    if (!startDate || !endDate) return '';
+    
+    const start = moment(startDate);
+    const end = moment(endDate);
+    const duration = moment.duration(end.diff(start));
+    
+    const days = Math.floor(duration.asDays());
+    const hours = duration.hours();
+    const minutes = duration.minutes();
+    
+    let timeString = '';
+    if (days > 0) timeString += `${days}d `;
+    if (hours > 0) timeString += `${hours}h `;
+    if (minutes > 0) timeString += `${minutes}m`;
+    
+    return timeString.trim() || '< 1m';
+}
         
         
         
@@ -437,9 +454,20 @@ function updateTable() {
                     <td class="px-6 py-4">${location}</td>
                     <td class="px-6 py-4">${partName}</td>
                     <td class="px-6 py-4">
+
+
+
+
+
+                    <td class="px-6 py-4">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(status)}">
                             ${status}
                         </span>
+                        ${status === 'Complete' ? `
+                            <div class="text-xs text-gray-500 mt-1">
+                                Time to complete: ${calculateCompletionTime(report.Timestamp, report['Ticket Closed'])}
+                            </div>
+                        ` : ''}
                     </td>
 
 
