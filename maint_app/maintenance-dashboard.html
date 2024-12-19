@@ -246,24 +246,32 @@ async function fetchData() {
        
         
         
-async function updateStatus(partId, newStatus) {
+async function updateStatus(partId, newStatus, latitude, longitude) {
     toggleLoading(true);
     try {
-        // First do the status update exactly as before
+        // Verify this is the correct record before updating
+        const matchingRecord = allReports.find(r => 
+            r['Part ID'] === partId && 
+            r.Latitude === latitude && 
+            r.Longitude === longitude
+        );
+        
+        if (!matchingRecord) {
+            console.error('Could not find matching record');
+            return;
+        }
+
+        // Use original API format to maintain backend compatibility
         const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
-        console.log('Status being set to:', newStatus, 'Sanitized to:', sanitizeStatus(newStatus)); // More detailed logging
+        console.log('Updating status for:', { partId, newStatus });
+        
         await fetch(url);
 
-        // Check if it's complete (compare with exactly how it appears in dropdown)
-        if (newStatus === 'Complete') {  // Changed from checking sanitized version
-            console.log('Status is Complete, writing timestamp...');
+        // If this was set to Complete, handle the timestamp update
+        if (newStatus === 'Complete') {
             const now = moment().format('MM/DD/YYYY HH:mm:ss');
             const timestampUrl = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Ticket Closed&newValue=${now}`;
-            console.log('Timestamp URL:', timestampUrl);
             await fetch(timestampUrl);
-            console.log('Timestamp write completed');
-        } else {
-            console.log('Status is not Complete:', newStatus);
         }
 
         await fetchData();
@@ -446,15 +454,15 @@ function updateTable() {
 
 
                     
-                    <td class="px-6 py-4">
-<select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
-        onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value))">
-                            <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
-                            <option ${status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
-                            <option ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                            <option ${status === 'Complete' ? 'selected' : ''}>Complete</option>
-                        </select>
-                    </td>
+<td class="px-6 py-4">
+    <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+            onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value), '${report.Latitude}', '${report.Longitude}')">
+        <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
+        <option ${status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
+        <option ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+        <option ${status === 'Complete' ? 'selected' : ''}>Complete</option>
+    </select>
+</td>
                     <td class="px-6 py-4">
                         ${report['Photo Link'] || report['Video Link'] ? `
                             ${report['Photo Link'] ? `
