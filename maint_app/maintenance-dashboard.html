@@ -246,11 +246,8 @@ async function updateStatus(partId, newStatus) {
     toggleLoading(true);
     try {
         // Create the URL with parameters
-        const url = new URL(API_URL);
-        url.searchParams.append('action', 'updateCell');
-        url.searchParams.append('partId', partId);
-        url.searchParams.append('columnName', 'Status');
-        url.searchParams.append('newValue', newStatus);
+      
+const url = `${API_URL}?action=updateStatus&partId=${partId}&columnName=Status&newValue=${sanitizeStatus(newStatus)}`;
 
         // Make the POST request
         const response = await fetch(url, {
