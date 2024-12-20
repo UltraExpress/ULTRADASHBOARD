@@ -535,15 +535,24 @@ function updateTable() {
 
 
 
-        <td class="px-6 py-4">
+
+
+
+<td class="px-6 py-4">
     <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-        report.priority === 'Critical' ? 'bg-red-100 text-red-800' :
-        report.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+        report.Priority === 'Critical' ? 'bg-red-100 text-red-800' :
+        report.Priority === 'High' ? 'bg-orange-100 text-orange-800' :
         'bg-blue-100 text-blue-800'
     }">
-        ${report.priority || 'Medium'}
+        ${report.Priority || 'Medium'}
     </span>
 </td>
+
+
+
+
+
+
     </tr>
 `;
         
