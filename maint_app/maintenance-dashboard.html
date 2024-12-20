@@ -577,8 +577,9 @@ function updateTable() {
 
 
 
-<a href="#" onclick="showImageModal('${report["Photo Link"]}'); return false;" 
+<a href="#" onclick="showImageModal('${report["Photo Link"] || ""}'); return false;" 
    class="text-blue-600 hover:text-blue-900">📷 View Photo</a>
+
 
 
 
