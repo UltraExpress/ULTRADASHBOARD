@@ -162,6 +162,7 @@ x<html lang="en">
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Update Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                         </tr>
                     </thead>
                     <tbody id="reportsTableBody" class="divide-y divide-gray-200">
@@ -531,6 +532,18 @@ function updateTable() {
                 <button onclick="alert('${report.Notes}')" class="text-blue-600 hover:text-blue-900">View Notes</button>
             ` : 'No notes'}
         </td>
+
+
+
+        <td class="px-6 py-4">
+    <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+        report.priority === 'Critical' ? 'bg-red-100 text-red-800' :
+        report.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+        'bg-blue-100 text-blue-800'
+    }">
+        ${report.priority || 'Medium'}
+    </span>
+</td>
     </tr>
 `;
         
