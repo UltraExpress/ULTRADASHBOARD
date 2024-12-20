@@ -187,16 +187,31 @@
 
 
 
+        function getDirectGoogleDriveImageUrl(url) {
+    // Check if it's a Google Drive URL
+    if (url.includes('drive.google.com')) {
+        // Extract the file ID
+        const fileId = url.match(/[-\w]{25,}/);
+        if (fileId) {
+            // Convert to direct download link
+            return `https://drive.google.com/uc?export=view&id=${fileId[0]}`;
+        }
+    }
+    return url;
+}
 
-
-
-
-        function showImageModal(imageUrl) {
+function showImageModal(imageUrl) {
     const modal = document.getElementById('imageModal');
-    document.getElementById('modalImage').src = imageUrl;
+    document.getElementById('modalImage').src = getDirectGoogleDriveImageUrl(imageUrl);
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
+
+
+
+
+
+
 
 function closeImageModal() {
     const modal = document.getElementById('imageModal');
@@ -541,8 +556,12 @@ function updateTable() {
 
 
 
+
+
+
+
 ${report['Photo Link'] ? `
-    <a href="#" onclick="showImageModal(\`${report['Photo Link']}\`); return false;" 
+    <a href="#" onclick="showImageModal('${report['Photo Link']}'); return false;" 
        class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
 ` : ''}
 
