@@ -187,14 +187,30 @@
 
 
 
-        function getDirectGoogleDriveImageUrl(url) {
+function getDirectGoogleDriveImageUrl(url) {
+    console.log('Original URL:', url); // Debug logging
+    
     // Check if it's a Google Drive URL
     if (url.includes('drive.google.com')) {
-        // Extract the file ID
-        const fileId = url.match(/[-\w]{25,}/);
+        let fileId;
+        
+        // Handle different Google Drive URL formats
+        if (url.includes('/file/d/')) {
+            // Format: https://drive.google.com/file/d/FILE_ID/view
+            fileId = url.split('/file/d/')[1].split('/')[0];
+        } else if (url.includes('id=')) {
+            // Format: https://drive.google.com/open?id=FILE_ID
+            fileId = url.split('id=')[1].split('&')[0];
+        } else {
+            // Try to find any 25+ character string of letters, numbers, and hyphens
+            const match = url.match(/[-\w]{25,}/);
+            fileId = match ? match[0] : null;
+        }
+        
         if (fileId) {
-            // Convert to direct download link
-            return `https://drive.google.com/uc?export=view&id=${fileId[0]}`;
+            const directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+            console.log('Converted URL:', directUrl); // Debug logging
+            return directUrl;
         }
     }
     return url;
@@ -202,11 +218,31 @@
 
 function showImageModal(imageUrl) {
     const modal = document.getElementById('imageModal');
-    document.getElementById('modalImage').src = getDirectGoogleDriveImageUrl(imageUrl);
+    const img = document.getElementById('modalImage');
+    
+    console.log('Opening modal for URL:', imageUrl); // Debug logging
+    
+    // Show loading state
+    img.style.opacity = '0.5';
+    
+    // Convert and set URL
+    const directUrl = getDirectGoogleDriveImageUrl(imageUrl);
+    img.src = directUrl;
+    
+    // Handle load events
+    img.onload = () => {
+        console.log('Image loaded successfully'); // Debug logging
+        img.style.opacity = '1';
+    };
+    
+    img.onerror = (e) => {
+        console.error('Image failed to load:', e); // Debug logging
+        img.style.opacity = '1';
+    };
+    
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
-
 
 
 
