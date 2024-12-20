@@ -718,7 +718,7 @@ function showImage(url) {
     const modal = document.getElementById('imageModal');
     const preview = document.getElementById('imagePreview');
     const fileId = url.match(/\/d\/(.*?)(\/|$)/)[1];
-    preview.src = `https://drive.google.com/file/d/${fileId}/preview?embedded=true&rm=minimal&usp=drivesdk`;
+    preview.src = `https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=1`;
     modal.style.display = 'block';
     modal.onclick = function(e) {
         if (e.target === modal) {
