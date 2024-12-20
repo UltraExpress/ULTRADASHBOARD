@@ -181,76 +181,6 @@
 
         
         
-
-
-
-
-
-function getDirectGoogleDriveImageUrl(url) {
-    // Check if it's a Google Drive URL
-    if (url.includes('drive.google.com')) {
-        let fileId;
-
-        // Extract file ID for common Google Drive URL formats
-        if (url.includes('/file/d/')) {
-            fileId = url.split('/file/d/')[1].split('/')[0];
-        } else if (url.includes('id=')) {
-            fileId = url.split('id=')[1].split('&')[0];
-        }
-
-        // Generate a direct viewable URL
-        if (fileId) {
-            return `https://drive.google.com/uc?export=view&id=${fileId}`;
-        }
-    }
-    return url; // Return the original URL if not Google Drive
-}
-
-
-
-        
-        
-        
-        
-        
-        
-function showImageModal(imageUrl) {
-    const modal = document.getElementById('imageModal');
-    const modalContent = document.getElementById('modalContent');
-
-    // Convert the Google Drive link to a /preview link
-    const iframeUrl = imageUrl.replace('/view', '/preview');
-
-    // Inject the iframe into the modalContent container
-    modalContent.innerHTML = `
-        <button onclick="closeImageModal()" class="absolute right-2 top-2 text-xl p-2">×</button>
-        <iframe src="${iframeUrl}" width="100%" height="500px" style="border: none;"></iframe>
-    `;
-
-    // Show the modal
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-
-
-
-
-
-
-
-function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    const modalContent = document.getElementById('modalContent');
-
-    // Clear modal content and hide the modal
-    modalContent.innerHTML = '';
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-
-
         
         
         
@@ -377,68 +307,52 @@ function sanitizeStatus(status) {
 function updateStats() {
     try {
         const stats = {
-            total: allReports.length,
+            total: allReports.length,  // Changed to use allReports for total count
             needsWork: filteredReports.filter(r => r.Status === 'Needs Work').length,
             partsOnOrder: filteredReports.filter(r => r.Status === 'Parts On Order').length,
             inProgress: filteredReports.filter(r => r.Status === 'In Progress').length,
-            complete: filteredReports.filter(r => r.Status === 'Complete').length,
-            openByLocation: {
-                riverside: filteredReports.filter(r => {
-                    const isRiverside = r.Location && r.Location.trim().toUpperCase() === 'RIVERSIDE';
-                    const isNotComplete = r.Status !== 'Complete';
-                    return isRiverside && isNotComplete;
-                }).length,
-                santaAna: filteredReports.filter(r => {
-                    const isSantaAna = r.Location && r.Location.trim().toUpperCase() === 'SANTA ANA';
-                    const isNotComplete = r.Status !== 'Complete';
-                    return isSantaAna && isNotComplete;
-                }).length
-            }
+            complete: filteredReports.filter(r => r.Status === 'Complete').length
         };
+        // ... rest of function remains the same
 
-        document.getElementById('statsContainer').innerHTML = `
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-gray-600">Total Reports</div>
-                <div class="text-4xl font-bold">${stats.total}</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-red-500">Needs Work</div>
-                <div class="text-4xl font-bold text-red-500">${stats.needsWork}</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-blue-600">Parts On Order</div>
-                <div class="text-4xl font-bold text-blue-600">${stats.partsOnOrder}</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-yellow-500">In Progress</div>
-                <div class="text-4xl font-bold text-yellow-500">${stats.inProgress}</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-green-500">Complete</div>
-                <div class="text-4xl font-bold text-green-500">${stats.complete}</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-blue-500">Avg Days to Complete</div>
-                <div class="text-4xl font-bold text-blue-500">-</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-purple-500">Avg New Daily Tickets</div>
-                <div class="text-4xl font-bold text-purple-500">-</div>
-            </div>
-            <div class="bg-white rounded-lg p-6">
-                <div class="text-blue-600 mb-2">Open Work Orders</div>
-                <div class="flex justify-between items-end">
-                    <div class="text-center">
-                        <div class="text-4xl font-bold text-blue-600">${stats.openByLocation.riverside}</div>
-                        <div class="text-sm text-blue-600 mt-1">RIVERSIDE</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-4xl font-bold text-blue-600">${stats.openByLocation.santaAna}</div>
-                        <div class="text-sm text-blue-600 mt-1">SANTA ANA</div>
-                    </div>
-                </div>
-            </div>
-        `;
+
+        
+        
+// Only modifying the HTML template inside updateStats:
+document.getElementById('statsContainer').innerHTML = `
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500">Total Reports</div>
+        <div class="text-3xl font-bold">${stats.total}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-red-500">Needs Work</div>
+        <div class="text-3xl font-bold text-red-500">${stats.needsWork}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-indigo-500">Parts On Order</div>
+        <div class="text-3xl font-bold text-indigo-500">${stats.partsOnOrder}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-yellow-500">In Progress</div>
+        <div class="text-3xl font-bold text-yellow-500">${stats.inProgress}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-green-500">Complete</div>
+        <div class="text-3xl font-bold text-green-500">${stats.complete}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-blue-500">Avg Days to Complete</div>
+        <div class="text-3xl font-bold text-blue-500">-</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-purple-500">Avg New Daily Tickets</div>
+        <div class="text-3xl font-bold text-purple-500">-</div>
+    </div>
+`;
+
+
+
+        
     } catch (error) {
         console.error('Error in updateStats:', error);
         throw error;
@@ -572,23 +486,9 @@ function updateTable() {
         </td>
         <td class="px-6 py-4">
             ${report['Photo Link'] || report['Video Link'] ? `
-             
-
-
-
-
-<a href="#" onclick="showImageModal('${report["Photo Link"] || ""}'); return false;" 
-   class="text-blue-600 hover:text-blue-900">📷 View Photo</a>
-
-
-
-
-
-` : ''}
-
-
-
-                
+                ${report['Photo Link'] ? `
+                    <a href="${report['Photo Link']}" target="_blank" class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
+                ` : ''}
                 ${report['Video Link'] ? `
                     <a href="${report['Video Link']}" target="_blank" class="text-blue-600 hover:text-blue-900">🎥 Video</a>
                 ` : ''}
@@ -774,19 +674,5 @@ function sortReports(reports, sortOrder) {
             }
         }
     </script>
-    
-    
-  
-<!-- Simple Image Modal -->
-<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4" style="z-index: 9999;">
-    <div id="modalContent" class="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] w-full relative">
-        <button onclick="closeImageModal()" class="absolute right-2 top-2 text-xl p-2">×</button>
-        <!-- Content (iframe) will be dynamically inserted here -->
-    </div>
-</div>
-
-
-
-    
 </body>
 </html>
