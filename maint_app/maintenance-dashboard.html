@@ -712,7 +712,7 @@ function showImage(url) {
     const modal = document.getElementById('imageModal');
     const preview = document.getElementById('imagePreview');
     const fileId = url.match(/\/d\/(.*?)(\/|$)/)[1];
-    preview.src = `https://drive.google.com/file/d/${fileId}/preview`;
+    preview.src = `https://drive.google.com/file/d/${fileId}/preview?noheader=true`;
     modal.style.display = 'block';
     modal.onclick = function() {
         modal.style.display = 'none';
