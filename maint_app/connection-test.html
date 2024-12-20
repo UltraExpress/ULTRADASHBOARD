@@ -9,9 +9,24 @@
     <h1>Google Drive Image Test</h1>
     <p>If the image URL conversion is correct, the image should appear below:</p>
     
-    <!-- Replace 'DIRECT_IMAGE_URL' with the direct URL conversion -->
-    <img src="https://drive.google.com/uc?export=view&id=1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR" alt="Test Image" style="max-width:100%; height:auto;">
+    <!-- Embed using iframe (Google's preferred method for Drive files) -->
+    <h2>Embedded via iframe:</h2>
+    <iframe 
+        src="https://drive.google.com/file/d/1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR/preview" 
+        width="640" 
+        height="480" 
+        allowfullscreen>
+    </iframe>
 
-    <p>Original Google Drive URL: <a href="https://drive.google.com/file/d/1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR/view" target="_blank">Click to View</a></p>
+    <!-- Attempt direct embedding using the uc?export=view method -->
+    <h2>Direct Image Link:</h2>
+    <img 
+        src="https://drive.google.com/uc?export=view&id=1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR" 
+        alt="Test Image" 
+        style="max-width:100%; height:auto;">
+    
+    <!-- Original link for reference -->
+    <h2>Original Google Drive URL:</h2>
+    <p><a href="https://drive.google.com/file/d/1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR/view" target="_blank">Click to View</a></p>
 </body>
 </html>
