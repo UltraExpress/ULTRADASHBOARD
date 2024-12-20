@@ -87,12 +87,18 @@ x<html lang="en">
 
 
         <!-- Simple Modal -->
-<div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999;">
-    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
-        <iframe id="imagePreview" width="800" height="600" frameborder="0" allowfullscreen scrolling="no"></iframe>
+
+
+
+
+
+
+
+        <div id="imageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); overflow:hidden; max-width:95vw; max-height:95vh;">
+        <iframe id="imagePreview" width="1024" height="768" frameborder="0" allowfullscreen scrolling="no" style="border:none; max-width:100%; max-height:100%;"></iframe>
     </div>
 </div>
-
 
 
 
@@ -712,11 +718,13 @@ function showImage(url) {
     const modal = document.getElementById('imageModal');
     const preview = document.getElementById('imagePreview');
     const fileId = url.match(/\/d\/(.*?)(\/|$)/)[1];
-    preview.src = `https://drive.google.com/file/d/${fileId}/preview?embedded=true&rm=minimal&usp=sharing`;
+    preview.src = `https://drive.google.com/file/d/${fileId}/preview?embedded=true&rm=minimal&usp=drivesdk`;
     modal.style.display = 'block';
-    modal.onclick = function() {
-        modal.style.display = 'none';
-        preview.src = '';
+    modal.onclick = function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            preview.src = '';
+        }
     }
 }
 
