@@ -214,30 +214,20 @@ function getDirectGoogleDriveImageUrl(url) {
         
         
         
-    function showImageModal(imageUrl) {
+function showImageModal(imageUrl) {
     const modal = document.getElementById('imageModal');
-    const img = document.getElementById('modalImage');
-    
-    console.log('Opening modal for URL:', imageUrl); // Debug logging
-    
-    // Show loading state
-    img.style.opacity = '0.5';
-    
-    // Convert and set URL
-    const directUrl = getDirectGoogleDriveImageUrl(imageUrl);
-    img.src = directUrl;
-    
-    // Handle load events
-    img.onload = () => {
-        console.log('Image loaded successfully'); // Debug logging
-        img.style.opacity = '1';
-    };
-    
-    img.onerror = (e) => {
-        console.error('Image failed to load:', e); // Debug logging
-        img.style.opacity = '1';
-    };
-    
+    const modalContent = document.getElementById('modalContent');
+
+    // Convert the Google Drive link to a /preview link
+    const iframeUrl = imageUrl.replace('/view', '/preview');
+
+    // Inject the iframe into the modalContent container
+    modalContent.innerHTML = `
+        <button onclick="closeImageModal()" class="absolute right-2 top-2 text-xl p-2">×</button>
+        <iframe src="${iframeUrl}" width="100%" height="500px" style="border: none;"></iframe>
+    `;
+
+    // Show the modal
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
@@ -247,14 +237,18 @@ function getDirectGoogleDriveImageUrl(url) {
 
 
 
+
+
 function closeImageModal() {
     const modal = document.getElementById('imageModal');
+    const modalContent = document.getElementById('modalContent');
+
+    // Clear modal content and hide the modal
+    modalContent.innerHTML = '';
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    setTimeout(() => {
-        document.getElementById('modalImage').src = '';
-    }, 100);
 }
+
 
 
         
@@ -587,16 +581,8 @@ function updateTable() {
 
 
 
-
-
-
-
-
-
-
-${report['Photo Link'] ? `
-    <a href="#" onclick="showImageModal('${report['Photo Link']}'); return false;" 
-       class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
+<a href="#" onclick="showImageModal('${report['Photo Link']}'); return false;" 
+   class="text-blue-600 hover:text-blue-900">📷 View Photo</a>
 ` : ''}
 
 
@@ -792,11 +778,12 @@ function sortReports(reports, sortOrder) {
   
 <!-- Simple Image Modal -->
 <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4" style="z-index: 9999;">
-    <div class="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] w-full relative">
+    <div id="modalContent" class="bg-white rounded-lg p-4 max-w-4xl max-h-[90vh] w-full relative">
         <button onclick="closeImageModal()" class="absolute right-2 top-2 text-xl p-2">×</button>
-        <img id="modalImage" src="" alt="Maintenance Photo" class="w-full h-auto">
+        <!-- Content (iframe) will be dynamically inserted here -->
     </div>
 </div>
+
 
 
     
