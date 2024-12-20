@@ -1,36 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Column Write Test</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Image Test</title>
 </head>
 <body>
-    <h2>Test Writing to Ticket Closed Column</h2>
-    <button onclick="testStatusUpdate()">Test Status Update (Working)</button>
-    <button onclick="testClosedUpdate()">Test Ticket Closed Update</button>
-    <div id="results"></div>
+    <h1>Google Drive Image Test</h1>
+    <p>If the image URL conversion is correct, the image should appear below:</p>
+    
+    <!-- Replace 'DIRECT_IMAGE_URL' with the direct URL conversion -->
+    <img src="https://drive.google.com/uc?export=view&id=1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR" alt="Test Image" style="max-width:100%; height:auto;">
 
-    <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzL9ffrICvYzdGEnDoj_DV2zoJZQC2wPigydwaG4MZLwAboOwPGBC3BJFsVFn8qt8x0Ww/exec';
-        
-        // This is the working status update we know works
-        async function testStatusUpdate() {
-            const url = `${API_URL}?action=updateStatus&partId=6&columnName=Status&newValue=COMPLETE`;
-            console.log('Testing status update URL:', url);
-            const response = await fetch(url);
-            const data = await response.json();
-            document.getElementById('results').innerHTML = 'Status Update Response: ' + JSON.stringify(data);
-        }
-
-        // This is our test for the closed column
-        async function testClosedUpdate() {
-            const now = moment().format('MM/DD/YYYY HH:mm:ss');
-            const url = `${API_URL}?action=updateStatus&partId=6&columnName=Ticket Closed&newValue=${now}`;
-            console.log('Testing closed update URL:', url);
-            const response = await fetch(url);
-            const data = await response.json();
-            document.getElementById('results').innerHTML = 'Closed Update Response: ' + JSON.stringify(data);
-        }
-    </script>
+    <p>Original Google Drive URL: <a href="https://drive.google.com/file/d/1W9XSCwoplOphMD0SIkOm8FzgX1h1yCvR/view" target="_blank">Click to View</a></p>
 </body>
 </html>
