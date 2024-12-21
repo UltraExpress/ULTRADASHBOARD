@@ -29,6 +29,35 @@
             width: 100%;
             height: 100%;
             border: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-wrapper iframe.loaded {
+            opacity: 1;
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .debug-info {
@@ -58,7 +87,22 @@
         const TEST_URL = "https://drive.google.com/file/d/1lyqWe-UokxUCLwrdRTZy0IhPoWwwfhXi/view?usp=drivesdk";
 
         function ImageTest() {
+            const [isLoading, setIsLoading] = React.useState(true);
+            const [loadTime, setLoadTime] = React.useState(null);
+            const startTimeRef = React.useRef(Date.now());
+
             const embedUrl = TEST_URL.replace('/view?usp=drivesdk', '/preview');
+
+            const handleLoad = () => {
+                const endTime = Date.now();
+                const loadTimeMs = endTime - startTimeRef.current;
+                setLoadTime(loadTimeMs);
+                setIsLoading(false);
+            };
+
+            React.useEffect(() => {
+                startTimeRef.current = Date.now();
+            }, []);
 
             return (
                 <div>
@@ -68,14 +112,27 @@
                         <div className="url-display">{TEST_URL}</div>
                         <div className="mb-1 mt-3">Embedded URL:</div>
                         <div className="url-display">{embedUrl}</div>
+                        {loadTime && (
+                            <div className="mt-3 text-sm">
+                                Load time: {loadTime}ms
+                            </div>
+                        )}
                     </div>
 
                     <div className="image-card">
                         <div className="image-wrapper">
+                            {isLoading && (
+                                <div className="loading-indicator">
+                                    <div className="loading-spinner"></div>
+                                    <div className="text-sm text-gray-600">Loading image...</div>
+                                </div>
+                            )}
                             <iframe
                                 src={embedUrl}
                                 allow="autoplay"
                                 loading="lazy"
+                                onLoad={handleLoad}
+                                className={isLoading ? '' : 'loaded'}
                             />
                         </div>
                         <div className="p-3">
