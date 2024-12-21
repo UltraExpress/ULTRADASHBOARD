@@ -328,7 +328,7 @@
                         paid: row.c[6]?.v === 'YES',
                         bad: row.c[7]?.v === 'YES'
                     }))
-                    .filter(img => img.photoUrl);
+                    .filter(img => img.photoUrl)
                     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                 const users = [...new Set(processedImages.map(img => img.username))]
