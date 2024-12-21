@@ -563,10 +563,16 @@ const DataManager = {
                 userStats[username].totalContributions++;
                 userStats[username].communities[community].count++;
                 
-                // Check if contribution is from today
-                if (date >= today) {
-                    userStats[username].todayTotal++;
-                }
+// Inside processData function, replace the above with:
+const rowDate = new Date(timestamp);
+rowDate.setHours(0, 0, 0, 0);  // normalize to start of day
+const today = new Date();
+today.setHours(0, 0, 0, 0);  // normalize to start of day
+
+// Compare the dates
+if (rowDate.getTime() === today.getTime()) {
+    userStats[username].todayTotal++;
+}
                 
                 if (isPaid) {
                     userStats[username].communities[community].paidCount++;
