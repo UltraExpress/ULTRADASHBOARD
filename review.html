@@ -395,8 +395,8 @@ const markImageAsBad = async (image) => {
         document.querySelector('.loading-overlay').style.display = 'flex';
         
         const formData = new URLSearchParams();
-        formData.append('markBad', 'YES');
-        formData.append('photoUrl', image.photoUrl);
+        formData.append('action', 'markBad');  // Changed to match server expectations
+        formData.append('identifier', image.photoUrl);  // Changed to match server expectations
                 
         await fetch(SCRIPT_URL, {
             method: 'POST',
