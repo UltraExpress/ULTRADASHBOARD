@@ -1,1 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flyer Image Review - Grid View</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            padding: 16px;
+        }
 
+        .image-card {
+            position: relative;
+            aspect-ratio: 4/3;
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .image-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+        }
+
+        .image-card:hover .image-overlay {
+            opacity: 1;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        .bad-marker {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ef4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            z-index: 10;
+        }
+
+        .stats-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        function ImageReviewApp() {
+            const [images, setImages] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [selectedImage, setSelectedImage] = React.useState(null);
+            const [users, setUsers] = React.useState([]);
+            const [filter, setFilter] = React.useState({
+                selectedUser: '',
+                todayOnly: true,
+                reviewStatus: 'pending'
+            });
+            const [stats, setStats] = React.useState({
+                totalImages: 0,
+                pendingReview: 0,
+                markedBad: 0
+            });
+
+            React.useEffect(() => {
+                fetchImages();
+            }, []);
+
+            const fetchImages = async () => {
+                try {
+                    const response = await fetch(
+                        `https://docs.google.com/spreadsheets/d/1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8/gviz/tq?tqx=out:json`
+                    );
+                    const text = await response.text();
+                    const data = JSON.parse(text.substring(47).slice(0, -2));
+                    
+                    const processedImages = data.table.rows
+                        .map((row, index) => ({
+                            rowIndex: index + 2,
+                            timestamp: row.c[0]?.v,
+                            username: row.c[1]?.v,
+                            community: row.c[2]?.v,
+                            photoUrl: row.c[5]?.v?.replace('/view?usp=drivesdk', '/preview'),
+                            originalUrl: row.c[5]?.v,
+                            bad: row.c[7]?.v === 'YES',
+                            paid: row.c[6]?.v === 'YES'
+                        }))
+                        .filter(img => img.photoUrl);
+
+                    // Extract unique users
+                    const uniqueUsers = [...new Set(processedImages.map(img => img.username))].filter(Boolean).sort();
+                    setUsers(uniqueUsers);
+                        
+                    setImages(processedImages);
+                    updateStats(processedImages);
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    setLoading(false);
+                }
+            };
+
+            const updateStats = (imageList) => {
+                setStats({
+                    totalImages: imageList.length,
+                    pendingReview: imageList.filter(img => !img.bad).length,
+                    markedBad: imageList.filter(img => img.bad).length
+                });
+            };
+
+            const markImageAsBad = async (image) => {
+                try {
+                    // Here you would integrate with your Google Sheets API endpoint
+                    // Update local state for now
+                    const updatedImages = images.map(img => 
+                        img.rowIndex === image.rowIndex ? {...img, bad: true} : img
+                    );
+                    setImages(updatedImages);
+                    updateStats(updatedImages);
+                } catch (error) {
+                    console.error('Error marking image as bad:', error);
+                }
+            };
+
+            const isToday = (timestamp) => {
+                if (!timestamp) return false;
+                const today = new Date();
+                const imageDate = new Date(timestamp);
+                return imageDate.toDateString() === today.toDateString();
+            };
+
+            const filteredImages = images.filter(img => {
+                if (filter.selectedUser && img.username !== filter.selectedUser) return false;
+                if (filter.todayOnly && !isToday(img.timestamp)) return false;
+                if (filter.reviewStatus === 'pending' && img.bad) return false;
+                if (filter.reviewStatus === 'bad' && !img.bad) return false;
+                return true;
+            });
+
+            return (
+                <div className="min-h-screen bg-gray-100">
+                    {/* Filters and Stats */}
+                    <div className="bg-white shadow p-4 sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto space-y-4">
+                            <div className="flex flex-wrap gap-4 items-center">
+                                <select
+                                    className="flex-1 min-w-[200px] border rounded p-2"
+                                    value={filter.selectedUser}
+                                    onChange={(e) => setFilter(f => ({...f, selectedUser: e.target.value}))}
+                                >
+                                    <option value="">All Users</option>
+                                    {users.map(user => (
+                                        <option key={user} value={user}>{user}</option>
+                                    ))}
+                                </select>
+
+                                <label className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={filter.todayOnly}
+                                        onChange={(e) => setFilter(f => ({...f, todayOnly: e.target.checked}))}
+                                        className="form-checkbox h-5 w-5 text-blue-600"
+                                    />
+                                    <span>Today Only</span>
+                                </label>
+
+                                <select
+                                    className="border rounded p-2"
+                                    value={filter.reviewStatus}
+                                    onChange={(e) => setFilter(f => ({...f, reviewStatus: e.target.value}))}
+                                >
+                                    <option value="all">All Images</option>
+                                    <option value="pending">Pending Review</option>
+                                    <option value="bad">Marked as Bad</option>
+                                </select>
+                            </div>
+
+                            {/* Stats Bar */}
+                            <div className="flex gap-4 text-sm text-gray-600">
+                                <div>Total Images: {filteredImages.length}</div>
+                                <div>Pending Review: {filteredImages.filter(img => !img.bad).length}</div>
+                                <div>Marked Bad: {filteredImages.filter(img => img.bad).length}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Image Grid */}
+                    {loading ? (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-xl">Loading...</div>
+                        </div>
+                    ) : filteredImages.length === 0 ? (
+                        <div className="flex items-center justify-center h-64 text-gray-500">
+                            No images match the current filters
+                        </div>
+                    ) : (
+                        <div className="image-grid">
+                            {filteredImages.map((image) => (
+                                <div key={image.rowIndex} className="image-card shadow-lg">
+                                    {image.bad && (
+                                        <div className="bad-marker">BAD</div>
+                                    )}
+                                    <img
+                                        src={image.photoUrl}
+                                        alt={`${image.community} by ${image.username}`}
+                                        onClick={() => setSelectedImage(image)}
+                                    />
+                                    <div className="image-overlay">
+                                        <div className="text-white text-sm">
+                                            <div>{image.username}</div>
+                                            <div>{image.community}</div>
+                                            <div>{new Date(image.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                        {!image.bad && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    markImageAsBad(image);
+                                                }}
+                                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                                            >
+                                                Mark as Bad
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Modal for enlarged image */}
+                    {selectedImage && (
+                        <div 
+                            className="modal"
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            <div className="modal-content">
+                                <img
+                                    src={selectedImage.photoUrl}
+                                    alt={`${selectedImage.community} by ${selectedImage.username}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <div className="absolute top-4 right-4 flex gap-4">
+                                    <a 
+                                        href={selectedImage.originalUrl}
+                                        target="_blank"
+                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        View Original
+                                    </a>
+                                    {!selectedImage.bad && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                markImageAsBad(selectedImage);
+                                                setSelectedImage(null);
+                                            }}
+                                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                        >
+                                            Mark as Bad
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        ReactDOM.createRoot(document.getElementById('root')).render(<ImageReviewApp />);
+    </script>
+</body>
+</html>
