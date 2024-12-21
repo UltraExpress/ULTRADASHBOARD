@@ -165,6 +165,20 @@
             font-size: 1.2rem;
         }
 
+        .virtual-grid {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .grid-container {
+            position: relative;
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 1800px;
+        }
+
         @media (max-width: 640px) {
             .filter-controls {
                 flex-direction: column;
@@ -178,7 +192,10 @@
     <div id="root"></div>
     
     <script type="text/babel">
-        // ImageDisplay component for handling Drive images
+
+
+
+        // ImageDisplay Component
         const ImageDisplay = ({ url }) => {
             const [isLoading, setIsLoading] = React.useState(true);
 
@@ -213,6 +230,72 @@
             );
         };
 
+        // Virtualization Hook
+        function useVirtualization(totalItems, itemHeight = 400, bufferSize = 5) {
+            const [visibleRange, setVisibleRange] = React.useState({ start: 0, end: 20 });
+            const containerRef = React.useRef(null);
+
+            React.useEffect(() => {
+                const handleScroll = () => {
+                    if (!containerRef.current) return;
+                    
+                    const container = containerRef.current;
+                    const scrollTop = window.scrollY;
+                    const viewportHeight = window.innerHeight;
+                    
+                    const itemsPerRow = Math.floor(container.offsetWidth / 320);
+                    const rowHeight = itemHeight + 20;
+                    
+                    const startRow = Math.floor(scrollTop / rowHeight) - bufferSize;
+                    const endRow = Math.ceil((scrollTop + viewportHeight) / rowHeight) + bufferSize;
+                    
+                    const start = Math.max(0, startRow * itemsPerRow);
+                    const end = Math.min(totalItems, endRow * itemsPerRow);
+                    
+                    setVisibleRange({ start, end });
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                window.addEventListener('resize', handleScroll);
+                handleScroll();
+                
+                return () => {
+                    window.removeEventListener('scroll', handleScroll);
+                    window.removeEventListener('resize', handleScroll);
+                };
+            }, [totalItems, itemHeight, bufferSize]);
+
+            return { visibleRange, containerRef };
+        }
+
+        // ImageCard Component
+        const ImageCard = React.memo(({ image, onMarkBad }) => {
+            return (
+                <div className="image-card">
+                    {image.bad && (
+                        <div className="bad-marker">BAD</div>
+                    )}
+                    <ImageDisplay url={image.photoUrl} />
+                    <div className="p-3">
+                        <div className="font-medium">{image.community}</div>
+                        <div className="text-sm text-gray-600">
+                            {image.username}<br/>
+                            {formatDate(image.timestamp)}
+                        </div>
+                    </div>
+                    {!image.bad && (
+                        <button
+                            onClick={() => onMarkBad(image)}
+                            className="bad-button"
+                        >
+                            Mark as Bad
+                        </button>
+                    )}
+                </div>
+            );
+        });
+
+        // DataManager
         const DataManager = {
             SHEET_ID: '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8',
             
@@ -258,6 +341,7 @@
             }
         };
 
+        // Main Application Component
         function ImageReviewApp() {
             const [images, setImages] = React.useState([]);
             const [loading, setLoading] = React.useState(true);
@@ -349,6 +433,9 @@
                 return true;
             });
 
+            const { visibleRange, containerRef } = useVirtualization(filteredImages.length);
+            const visibleImages = filteredImages.slice(visibleRange.start, visibleRange.end);
+
             const pendingCount = filteredImages.filter(img => !img.bad).length;
             const badCount = filteredImages.filter(img => img.bad).length;
 
@@ -371,7 +458,7 @@
                                 <input
                                     type="checkbox"
                                     checked={filter.todayOnly}
-                                    onChange={(e) => setFilter(f => ({...f, todayOnly: e.target.checked}))}
+                                    onChange={(e) => setFilter(f => ({...f, todayOnly: e.checked}))}
                                     id="today-only"
                                 />
                                 <label htmlFor="today-only">Today Only</label>
@@ -408,35 +495,50 @@
                             No images match the current filters
                         </div>
                     ) : (
-                        <div className="image-grid">
-                            {filteredImages.map((image) => (
-                                <div key={image.rowIndex} className="image-card">
-                                    {image.bad && (
-                                        <div className="bad-marker">BAD</div>
-                                    )}
-                                    <ImageDisplay url={image.photoUrl} />
-                                    <div className="p-3">
-                                        <div className="font-medium">{image.community}</div>
-                                        <div className="text-sm text-gray-600">
-                                            {image.username}<br/>
-                                            {formatDate(image.timestamp)}
-                                        </div>
+                        <div className="virtual-grid" ref={containerRef}>
+                            <div 
+                                className="grid-container"
+                                style={{ 
+                                    height: `${Math.ceil(filteredImages.length / Math.floor(containerRef.current?.offsetWidth / 320)) * 420}px`
+                                }}
+                            >
+                                {visibleImages.map((image, index) => (
+                                    <div
+                                        key={image.rowIndex}
+                                        style={{
+                                            position: 'absolute',
+                                            top: `${Math.floor((index + visibleRange.start) / Math.floor(containerRef.current?.offsetWidth / 320)) * 420}px`,
+                                            left: `${((index + visibleRange.start) % Math.floor(containerRef.current?.offsetWidth / 320)) * 320}px`,
+                                            width: '300px'
+                                        }}
+                                    >
+                                        <ImageCard 
+                                            image={image} 
+                                            onMarkBad={markImageAsBad}
+                                        />
                                     </div>
-                                    {!image.bad && (
-                                        <button
-                                            onClick={() => markImageAsBad(image)}
-                                            className="bad-button"
-                                        >
-                                            Mark as Bad
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
             );
         }
+        
+        // Define formatDate globally for ImageCard component
+        window.formatDate = function(timestamp) {
+            if (!timestamp) return 'Unknown Date';
+            try {
+                if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
+                    const params = timestamp.slice(5, -1).split(',').map(Number);
+                    const date = new Date(params[0], params[1] - 1, params[2], params[3] || 0, params[4] || 0);
+                    return date.toLocaleString();
+                }
+                return new Date(timestamp).toLocaleString();
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        };
         
         ReactDOM.createRoot(document.getElementById('root')).render(<ImageReviewApp />);
     </script>
