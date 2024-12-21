@@ -503,19 +503,21 @@ const DataManager = {
         }
     },
 
-    processData(data) {
+processData(data) {
         const userStats = {};
         const markers = [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to start of today
-
+        
         const sortedRows = data.table.rows
             .map(row => ({
                 timestamp: row.c[0]?.v,
                 data: row,
-                date: row.c[0]?.v ? new Date(row.c[0].v.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$1-$2')) : new Date(0)
+                // Parse the MM/DD/YYYY format correctly
+                date: row.c[0]?.v ? new Date(row.c[0].v.split(' ')[0].split('/').map(Number).join('/')) : new Date(0)
             }))
             .sort((a, b) => b.date - a.date);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         sortedRows.forEach(({data: row, date}) => {
             const timestamp = row.c[0]?.v;
@@ -527,7 +529,47 @@ const DataManager = {
             const isPaid = row.c[6]?.v === 'YES';
 
             if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-                // Process for markers
+                // Initialize user stats if needed
+                if (!userStats[username]) {
+                    userStats[username] = {
+                        totalContributions: 0,
+                        totalPaid: 0,
+                        todayTotal: 0,
+                        communities: {},
+                        dates: new Set()
+                    };
+                }
+
+                // Initialize community stats if needed
+                if (!userStats[username].communities[community]) {
+                    userStats[username].communities[community] = {
+                        count: 0,
+                        paidCount: 0
+                    };
+                }
+
+                // Update totals
+                userStats[username].totalContributions++;
+                userStats[username].communities[community].count++;
+
+                // Check if entry is from today
+                const entryDate = new Date(timestamp.split(' ')[0]);
+                entryDate.setHours(0, 0, 0, 0);
+                
+                if (entryDate.getTime() === today.getTime()) {
+                    userStats[username].todayTotal++;
+                }
+
+                if (isPaid) {
+                    userStats[username].communities[community].paidCount++;
+                    userStats[username].totalPaid++;
+                }
+
+                if (timestamp) {
+                    userStats[username].dates.add(timestamp);
+                }
+
+                // Add marker data
                 const photoUrl = getGoogleDriveImageUrl(originalPhotoUrl);
                 let fileId = '';
                 if (originalPhotoUrl) {
@@ -541,47 +583,6 @@ const DataManager = {
                 markers.push({
                     lat, lng, community, username, timestamp, photoUrl, fileId
                 });
-
-                // Process for stats
-                if (!userStats[username]) {
-                    userStats[username] = {
-                        totalContributions: 0,
-                        totalPaid: 0,
-                        todayTotal: 0,
-                        communities: {},
-                        dates: new Set()
-                    };
-                }
-
-                if (!userStats[username].communities[community]) {
-                    userStats[username].communities[community] = {
-                        count: 0,
-                        paidCount: 0
-                    };
-                }
-
-                userStats[username].totalContributions++;
-                userStats[username].communities[community].count++;
-                
-// Inside processData function, replace the above with:
-const rowDate = new Date(timestamp);
-rowDate.setHours(0, 0, 0, 0);  // normalize to start of day
-const today = new Date();
-today.setHours(0, 0, 0, 0);  // normalize to start of day
-
-// Compare the dates
-if (rowDate.getTime() === today.getTime()) {
-    userStats[username].todayTotal++;
-}
-                
-                if (isPaid) {
-                    userStats[username].communities[community].paidCount++;
-                    userStats[username].totalPaid++;
-                }
-
-                if (timestamp) {
-                    userStats[username].dates.add(timestamp);
-                }
             }
         });
 
