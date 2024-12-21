@@ -359,12 +359,7 @@ function ImageReviewApp() {
 
     React.useEffect(() => {
         fetchImages();
-        // Force re-filtering when todayOnly changes
-        const filterTimeout = setTimeout(() => {
-            setImages(prev => [...prev]);
-        }, 0);
-        return () => clearTimeout(filterTimeout);
-    }, [filter.todayOnly]);
+    }, []);
 
     const parseDate = (timestamp) => {
         if (!timestamp) return null;
@@ -377,7 +372,7 @@ function ImageReviewApp() {
             }
         }
         
-        // Fallback for other formats if needed
+        // Handle Date() format
         if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
             const params = timestamp.slice(5, -1).split(',').map(Number);
             return new Date(params[0], params[1] - 1, params[2], params[3] || 0, params[4] || 0);
@@ -405,7 +400,30 @@ function ImageReviewApp() {
         setLoading(false);
     };
 
-    const markImageAsBad = async (image) => {
+    const isToday = React.useCallback((timestamp) => {
+        const date = parseDate(timestamp);
+        if (!date || isNaN(date)) return false;
+        const today = new Date();
+        return date.toDateString() === today.toDateString();
+    }, []);
+
+    const filteredImages = React.useMemo(() => {
+        return images.filter(img => {
+            if (filter.selectedUser && img.username !== filter.selectedUser) return false;
+            if (filter.todayOnly && !isToday(img.timestamp)) return false;
+            if (filter.reviewStatus === 'pending' && img.bad) return false;
+            if (filter.reviewStatus === 'bad' && !img.bad) return false;
+            return true;
+        });
+    }, [images, filter, isToday]);
+
+    const { visibleRange, containerRef } = useVirtualization(filteredImages.length);
+    const visibleImages = filteredImages.slice(visibleRange.start, visibleRange.end);
+
+    const pendingCount = filteredImages.filter(img => !img.bad).length;
+    const badCount = filteredImages.filter(img => img.bad).length;
+
+    const handleMarkBad = async (image) => {
         try {
             document.querySelector('.loading-overlay').style.display = 'flex';
             
@@ -422,10 +440,11 @@ function ImageReviewApp() {
                 body: formData
             });
 
-            const updatedImages = images.map(img => 
-                img.rowIndex === image.rowIndex ? {...img, bad: true} : img
+            setImages(prevImages => 
+                prevImages.map(img => 
+                    img.rowIndex === image.rowIndex ? {...img, bad: true} : img
+                )
             );
-            setImages(updatedImages);
             
             setTimeout(() => {
                 document.querySelector('.loading-overlay').style.display = 'none';
@@ -438,116 +457,101 @@ function ImageReviewApp() {
         }
     };
 
-    const isToday = (timestamp) => {
-        const date = parseDate(timestamp);
-        if (!date || isNaN(date)) return false;
-        const today = new Date();
-        return date.toDateString() === today.toDateString();
-    };
-
-    const filteredImages = React.useMemo(() => {
-        return images.filter(img => {
-            if (filter.selectedUser && img.username !== filter.selectedUser) return false;
-            if (filter.todayOnly && !isToday(img.timestamp)) return false;
-            if (filter.reviewStatus === 'pending' && img.bad) return false;
-            if (filter.reviewStatus === 'bad' && !img.bad) return false;
-            return true;
-        });
-    }, [images, filter.selectedUser, filter.todayOnly, filter.reviewStatus]);
-
-    const { visibleRange, containerRef } = useVirtualization(filteredImages.length);
-    const visibleImages = filteredImages.slice(visibleRange.start, visibleRange.end);
-
-    const pendingCount = filteredImages.filter(img => !img.bad).length;
-    const badCount = filteredImages.filter(img => img.bad).length;
-
     return (
         <div>
             <div className="filters">
-                <div className="filter-controls">   
-                        <div className="filter-controls">
-                            <select
-                                value={filter.selectedUser}
-                                onChange={(e) => setFilter(f => ({...f, selectedUser: e.target.value}))}
-                                className="min-w-[200px]"
-                            >
-                                <option value="">All Users</option>
-                                {users.map(user => (
-                                    <option key={user} value={user}>{user}</option>
-                                ))}
-                            </select>
+                <div className="filter-controls">
+                    <select
+                        value={filter.selectedUser}
+                        onChange={(e) => setFilter(prev => ({...prev, selectedUser: e.target.value}))}
+                        className="min-w-[200px]"
+                    >
+                        <option value="">All Users</option>
+                        {users.map(user => (
+                            <option key={user} value={user}>{user}</option>
+                        ))}
+                    </select>
 
-                            <div className="checkbox-wrapper">
-                                <input
-                                    type="checkbox"
-                                    checked={filter.todayOnly}
-                                    onChange={(e) => setFilter(f => ({...f, todayOnly: e.checked}))}
-                                    id="today-only"
-                                />
-                                <label htmlFor="today-only">Today Only</label>
-                            </div>
-
-                            <select
-                                value={filter.reviewStatus}
-                                onChange={(e) => setFilter(f => ({...f, reviewStatus: e.target.value}))}
-                            >
-                                <option value="all">All Images</option>
-                                <option value="pending">Pending Review</option>
-                                <option value="bad">Marked as Bad</option>
-                            </select>
-
-                            <div className="stats">
-                                Total Images: {filteredImages.length} | 
-                                Pending Review: {pendingCount} | 
-                                Marked Bad: {badCount}
-                            </div>
-
-                            <a href="index.html" className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                Back to Dashboard
-                            </a>
-                        </div>
+                    <div className="checkbox-wrapper">
+                        <input
+                            type="checkbox"
+                            checked={filter.todayOnly}
+                            onChange={(e) => setFilter(prev => ({...prev, todayOnly: e.target.checked}))}
+                            id="today-only"
+                        />
+                        <label htmlFor="today-only">Today Only</label>
                     </div>
 
-                    {loading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <div className="loading-spinner"></div>
-                            <div className="text-xl ml-4">Loading images...</div>
-                        </div>
-                    ) : filteredImages.length === 0 ? (
-                        <div className="flex items-center justify-center h-64 text-gray-500">
-                            No images match the current filters
-                        </div>
-                    ) : (
-                        <div className="virtual-grid" ref={containerRef}>
-                            <div 
-                                className="grid-container"
-                                style={{ 
-                                    height: `${Math.ceil(filteredImages.length / Math.floor(containerRef.current?.offsetWidth / 320)) * 420}px`
+                    <select
+                        value={filter.reviewStatus}
+                        onChange={(e) => setFilter(prev => ({...prev, reviewStatus: e.target.value}))}
+                    >
+                        <option value="all">All Images</option>
+                        <option value="pending">Pending Review</option>
+                        <option value="bad">Marked as Bad</option>
+                    </select>
+
+                    <div className="stats">
+                        Total Images: {filteredImages.length} | 
+                        Pending Review: {pendingCount} | 
+                        Marked Bad: {badCount}
+                    </div>
+
+                    <a href="index.html" className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="loading-spinner"></div>
+                    <div className="text-xl ml-4">Loading images...</div>
+                </div>
+            ) : filteredImages.length === 0 ? (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                    No images match the current filters
+                </div>
+            ) : (
+                <div className="virtual-grid" ref={containerRef}>
+                    <div 
+                        className="grid-container"
+                        style={{ 
+                            height: `${Math.ceil(filteredImages.length / Math.floor(containerRef.current?.offsetWidth / 320)) * 420}px`
+                        }}
+                    >
+                        {visibleImages.map((image, index) => (
+                            <div
+                                key={image.rowIndex}
+                                style={{
+                                    position: 'absolute',
+                                    top: `${Math.floor((index + visibleRange.start) / Math.floor(containerRef.current?.offsetWidth / 320)) * 420}px`,
+                                    left: `${((index + visibleRange.start) % Math.floor(containerRef.current?.offsetWidth / 320)) * 320}px`,
+                                    width: '300px'
                                 }}
                             >
-                                {visibleImages.map((image, index) => (
-                                    <div
-                                        key={image.rowIndex}
-                                        style={{
-                                            position: 'absolute',
-                                            top: `${Math.floor((index + visibleRange.start) / Math.floor(containerRef.current?.offsetWidth / 320)) * 420}px`,
-                                            left: `${((index + visibleRange.start) % Math.floor(containerRef.current?.offsetWidth / 320)) * 320}px`,
-                                            width: '300px'
-                                        }}
-                                    >
-                                        <ImageCard 
-                                            image={image} 
-                                            onMarkBad={markImageAsBad}
-                                        />
-                                    </div>
-                                ))}
+                                <ImageCard 
+                                    image={image} 
+                                    onMarkBad={handleMarkBad}
+                                />
                             </div>
-                        </div>
-                    )}
+                        ))}
+                    </div>
                 </div>
-            );
-        }
-        
+            )}
+        </div>
+    );
+}
+
+export default ImageReviewApp;
+
+
+
+
+
+
+
+            
         // Define formatDate globally for ImageCard component
         window.formatDate = function(timestamp) {
             if (!timestamp) return 'Unknown Date';
