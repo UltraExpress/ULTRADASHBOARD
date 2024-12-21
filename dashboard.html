@@ -202,13 +202,12 @@
     </style>
 </head>
 <body>
-    <button class="toggle-panel" onclick="toggleStatsPanel()">Toggle Stats</button>
-    <div id="stats-panel">
-        <div class="stats-grid" id="user-stats-container">
-            <div style="position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; gap: 8px;">
+    <div style="position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; gap: 8px;">
         <button class="toggle-panel" onclick="toggleStatsPanel()">Toggle Stats</button>
         <button class="toggle-panel" onclick="window.location.href='review.html'">Review Page</button>
     </div>
+    <div id="stats-panel">
+        <div class="stats-grid" id="user-stats-container">
             <!-- Stats will be populated here -->
         </div>
     </div>
