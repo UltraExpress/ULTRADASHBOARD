@@ -494,8 +494,8 @@ function updateTable() {
         </td>
         <td class="px-6 py-4">
 <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
-onchange="prompt('Password:')==''+[117,108,116,114,97,50,48,50,52].map(x=>String.fromCharCode(x)).join('') ? updateStatus('${report['Part ID']}', sanitizeStatus(this.value)) : fetchData()"
-
+<select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+        onchange="prompt('Password:')=='ultra2024' ? updateStatus('${report['Part ID']}', sanitizeStatus(this.value)) : fetchData()">
 
                     
                 <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
