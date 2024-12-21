@@ -507,12 +507,12 @@ processData(data) {
     const userStats = {};
     const markers = [];
     
-    // Get today's date string in MM/DD/YYYY format
-    const today = new Date();
-    const todayStr = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+    // Get today's exact date string (e.g., "12/20/2024")
+    const now = new Date();
+    const todayStr = `${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')}/${now.getFullYear()}`;
     
     data.table.rows.forEach(row => {
-        const timestamp = row.c[0]?.v;
+        const timestamp = row.c[0]?.v;  // This will be like "12/20/2024 20:25:10"
         const username = row.c[1]?.v || 'Anonymous';
         const community = row.c[2]?.v || 'Unknown Location';
         const lat = row.c[3]?.v;
@@ -544,8 +544,8 @@ processData(data) {
             userStats[username].totalContributions++;
             userStats[username].communities[community].count++;
 
-            // Simple string comparison for today's entries
-            const entryDateStr = timestamp.split(' ')[0];
+            // Check if entry is from today by comparing the date part
+            const entryDateStr = timestamp.split(' ')[0];  // Get just the date part
             if (entryDateStr === todayStr) {
                 userStats[username].todayTotal++;
             }
