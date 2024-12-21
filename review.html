@@ -38,13 +38,13 @@
             background: #f1f5f9;
         }
 
-        .image-wrapper img {
+        .image-wrapper iframe {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            border: none;
         }
 
         .image-info {
@@ -154,6 +154,25 @@
     <div id="root"></div>
     
     <script type="text/babel">
+        // ImageDisplay component for handling Drive images
+        const ImageDisplay = ({ url }) => {
+            const getEmbedUrl = (url) => {
+                if (!url) return null;
+                if (url.includes('/view?usp=drivesdk')) {
+                    return url.replace('/view?usp=drivesdk', '/preview');
+                }
+                return url;
+            };
+
+            return (
+                <iframe
+                    src={getEmbedUrl(url)}
+                    allow="autoplay"
+                    loading="lazy"
+                />
+            );
+        };
+
         const DataManager = {
             SHEET_ID: '1Q-Sk8g_h3FnY-NS4CQe_rEARCJkG0pYIL8Bfzws-Vp8',
             
@@ -215,12 +234,10 @@
 
             const parseDate = (timestamp) => {
                 if (!timestamp) return null;
-                // Handle Google Sheets date format: "Date(2024,1,1,12,0,0)"
                 if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
                     const params = timestamp.slice(5, -1).split(',').map(Number);
                     return new Date(params[0], params[1] - 1, params[2], params[3] || 0, params[4] || 0);
                 }
-                // Handle standard date string
                 return new Date(timestamp);
             };
 
@@ -244,7 +261,6 @@
                 setLoading(false);
             };
 
-            // Using the same script URL as the upload form
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
             
             const markImageAsBad = async (image) => {
@@ -252,9 +268,9 @@
                     document.querySelector('.loading-overlay').style.display = 'flex';
                     
                     const formData = new URLSearchParams();
-                    formData.append('rowIndex', image.rowIndex);  // The row number
-                    formData.append('columnIndex', 8);           // Column H is 8
-                    formData.append('value', 'YES');            // Setting the BAD value to YES
+                    formData.append('rowIndex', image.rowIndex);
+                    formData.append('columnIndex', 8);
+                    formData.append('value', 'YES');
                             
                     await fetch(SCRIPT_URL, {
                         method: 'POST',
@@ -262,7 +278,6 @@
                         body: formData
                     });
 
-                    // Update local state and refetch data
                     const updatedImages = images.map(img => 
                         img.rowIndex === image.rowIndex ? {...img, bad: true} : img
                     );
@@ -293,14 +308,6 @@
                 if (filter.reviewStatus === 'bad' && !img.bad) return false;
                 return true;
             });
-
-            const getImageUrl = (url) => {
-                if (!url) return null;
-                if (url.includes('/view?usp=drivesdk')) {
-                    return url.replace('/view?usp=drivesdk', '/preview');
-                }
-                return url;
-            };
 
             const pendingCount = filteredImages.filter(img => !img.bad).length;
             const badCount = filteredImages.filter(img => img.bad).length;
@@ -367,10 +374,7 @@
                                         <div className="bad-marker">BAD</div>
                                     )}
                                     <div className="image-wrapper">
-                                        <img
-                                            src={getImageUrl(image.photoUrl)}
-                                            alt={`${image.community} by ${image.username}`}
-                                        />
+                                        <ImageDisplay url={image.photoUrl} />
                                     </div>
                                     <div className="image-info">
                                         <div className="font-medium">{image.community}</div>
