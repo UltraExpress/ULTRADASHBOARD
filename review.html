@@ -328,8 +328,7 @@
                         paid: row.c[6]?.v === 'YES',
                         bad: row.c[7]?.v === 'YES'
                     }))
-                    .filter(img => img.photoUrl)
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    .filter(img => img.photoUrl);
 
                 const users = [...new Set(processedImages.map(img => img.username))]
                     .filter(Boolean)
@@ -349,7 +348,7 @@
             const [users, setUsers] = React.useState([]);
             const [filter, setFilter] = React.useState({
                 selectedUser: '',
-                todayOnly: false,
+                todayOnly: true,
                 reviewStatus: 'all'
             });
 
@@ -444,35 +443,12 @@ const markImageAsBad = async (image) => {
 
             
 
-const isToday = (timestamp) => {
-    // Add console log to debug the incoming timestamp
-    console.log('Checking timestamp:', timestamp);
-    
-    const date = parseDate(timestamp);
-    if (!date || isNaN(date)) {
-        console.log('Invalid date for:', timestamp);
-        return false;
-    }
-    
-    const today = new Date();
-    const isMatch = (
-        date.getFullYear() === today.getFullYear() &&
-        date.getMonth() === today.getMonth() &&
-        date.getDate() === today.getDate()
-    );
-    
-    // Debug log the comparison result
-    console.log('Date comparison:', {
-        timestamp,
-        date: date.toLocaleString(),
-        today: today.toLocaleString(),
-        isMatch
-    });
-    
-    return isMatch;
-};
-
-            
+            const isToday = (timestamp) => {
+                const date = parseDate(timestamp);
+                if (!date || isNaN(date)) return false;
+                const today = new Date();
+                return date.toDateString() === today.toDateString();
+            };
 
             const filteredImages = images.filter(img => {
                 if (filter.selectedUser && img.username !== filter.selectedUser) return false;
