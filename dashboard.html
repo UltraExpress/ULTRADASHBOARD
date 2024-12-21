@@ -202,10 +202,10 @@
     </style>
 </head>
 <body>
-    <div style="position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; gap: 8px;">
-        <button class="toggle-panel" onclick="toggleStatsPanel()">Toggle Stats</button>
-        <button class="toggle-panel" onclick="window.location.href='review.html'">Review Page</button>
-    </div>
+<div style="position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; gap: 8px;">
+    <button style="background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); cursor: pointer; border: none; font-weight: 500; transition: all 0.2s ease;" onclick="toggleStatsPanel()">Toggle Stats</button>
+    <button style="background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); cursor: pointer; border: none; font-weight: 500; transition: all 0.2s ease;" onclick="window.location.href='review.html'">Review Page</button>
+</div>
     <div id="stats-panel">
         <div class="stats-grid" id="user-stats-container">
             <!-- Stats will be populated here -->
