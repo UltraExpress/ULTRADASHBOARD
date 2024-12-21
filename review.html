@@ -7,73 +7,63 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+        }
+
         .image-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 16px;
-            padding: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
         }
 
         .image-card {
-            position: relative;
-            aspect-ratio: 4/3;
-            background: #f8fafc;
+            background: white;
             border-radius: 8px;
             overflow: hidden;
-            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
-        .image-card:hover {
-            transform: translateY(-2px);
+        .image-wrapper {
+            position: relative;
+            padding-top: 75%; /* 4:3 Aspect Ratio */
+            background: #f1f5f9;
         }
 
-        .image-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .image-overlay {
+        .image-wrapper img {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            transition: opacity 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 8px;
-        }
-
-        .image-card:hover .image-overlay {
-            opacity: 1;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-
-        .modal-content img {
-            max-width: 100%;
-            max-height: 90vh;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
+        }
+
+        .image-info {
+            padding: 12px;
+            background: white;
+        }
+
+        .bad-button {
+            width: 100%;
+            padding: 8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .bad-button:hover {
+            background: #dc2626;
         }
 
         .bad-marker {
@@ -84,19 +74,62 @@
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.875rem;
+            font-weight: 500;
             z-index: 10;
         }
 
-        .stats-badge {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+        .filters {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .filter-controls {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .stats {
+            padding: 8px 16px;
+            background: #f8fafc;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: #475569;
+        }
+
+        select, .checkbox-wrapper {
+            height: 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0 12px;
+            background: white;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            background: white;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
@@ -107,22 +140,33 @@
         function ImageReviewApp() {
             const [images, setImages] = React.useState([]);
             const [loading, setLoading] = React.useState(true);
-            const [selectedImage, setSelectedImage] = React.useState(null);
             const [users, setUsers] = React.useState([]);
             const [filter, setFilter] = React.useState({
                 selectedUser: '',
                 todayOnly: true,
-                reviewStatus: 'pending'
-            });
-            const [stats, setStats] = React.useState({
-                totalImages: 0,
-                pendingReview: 0,
-                markedBad: 0
+                reviewStatus: 'all'
             });
 
             React.useEffect(() => {
                 fetchImages();
             }, []);
+
+            const parseDate = (timestamp) => {
+                if (!timestamp) return null;
+                // Handle Google Sheets date format: "Date(2024,1,1,12,0,0)"
+                if (timestamp.startsWith('Date(')) {
+                    const params = timestamp.slice(5, -1).split(',').map(Number);
+                    return new Date(params[0], params[1] - 1, params[2], params[3] || 0, params[4] || 0);
+                }
+                // Handle standard date string
+                return new Date(timestamp);
+            };
+
+            const formatDate = (timestamp) => {
+                const date = parseDate(timestamp);
+                if (!date || isNaN(date)) return 'Invalid Date';
+                return date.toLocaleString();
+            };
 
             const fetchImages = async () => {
                 try {
@@ -136,21 +180,20 @@
                         .map((row, index) => ({
                             rowIndex: index + 2,
                             timestamp: row.c[0]?.v,
-                            username: row.c[1]?.v,
-                            community: row.c[2]?.v,
-                            photoUrl: row.c[5]?.v?.replace('/view?usp=drivesdk', '/preview'),
-                            originalUrl: row.c[5]?.v,
+                            username: row.c[1]?.v || 'Unknown',
+                            community: row.c[2]?.v || 'Unknown',
+                            photoUrl: row.c[5]?.v,
                             bad: row.c[7]?.v === 'YES',
                             paid: row.c[6]?.v === 'YES'
                         }))
                         .filter(img => img.photoUrl);
 
                     // Extract unique users
-                    const uniqueUsers = [...new Set(processedImages.map(img => img.username))].filter(Boolean).sort();
+                    const uniqueUsers = [...new Set(processedImages.map(img => img.username))]
+                        .filter(Boolean)
+                        .sort();
                     setUsers(uniqueUsers);
-                        
                     setImages(processedImages);
-                    updateStats(processedImages);
                     setLoading(false);
                 } catch (error) {
                     console.error('Error fetching data:', error);
@@ -158,33 +201,24 @@
                 }
             };
 
-            const updateStats = (imageList) => {
-                setStats({
-                    totalImages: imageList.length,
-                    pendingReview: imageList.filter(img => !img.bad).length,
-                    markedBad: imageList.filter(img => img.bad).length
-                });
-            };
-
             const markImageAsBad = async (image) => {
                 try {
                     // Here you would integrate with your Google Sheets API endpoint
-                    // Update local state for now
+                    // For now, just update local state
                     const updatedImages = images.map(img => 
                         img.rowIndex === image.rowIndex ? {...img, bad: true} : img
                     );
                     setImages(updatedImages);
-                    updateStats(updatedImages);
                 } catch (error) {
                     console.error('Error marking image as bad:', error);
                 }
             };
 
             const isToday = (timestamp) => {
-                if (!timestamp) return false;
+                const date = parseDate(timestamp);
+                if (!date || isNaN(date)) return false;
                 const today = new Date();
-                const imageDate = new Date(timestamp);
-                return imageDate.toDateString() === today.toDateString();
+                return date.toDateString() === today.toDateString();
             };
 
             const filteredImages = images.filter(img => {
@@ -195,132 +229,94 @@
                 return true;
             });
 
+            const getImageUrl = (url) => {
+                if (!url) return null;
+                if (url.includes('/view?usp=drivesdk')) {
+                    return url.replace('/view?usp=drivesdk', '/preview');
+                }
+                return url;
+            };
+
             return (
-                <div className="min-h-screen bg-gray-100">
-                    {/* Filters and Stats */}
-                    <div className="bg-white shadow p-4 sticky top-0 z-50">
-                        <div className="max-w-7xl mx-auto space-y-4">
-                            <div className="flex flex-wrap gap-4 items-center">
-                                <select
-                                    className="flex-1 min-w-[200px] border rounded p-2"
-                                    value={filter.selectedUser}
-                                    onChange={(e) => setFilter(f => ({...f, selectedUser: e.target.value}))}
-                                >
-                                    <option value="">All Users</option>
-                                    {users.map(user => (
-                                        <option key={user} value={user}>{user}</option>
-                                    ))}
-                                </select>
+                <div>
+                    <div className="filters">
+                        <div className="filter-controls">
+                            <select
+                                value={filter.selectedUser}
+                                onChange={(e) => setFilter(f => ({...f, selectedUser: e.target.value}))}
+                                className="min-w-[200px]"
+                            >
+                                <option value="">All Users</option>
+                                {users.map(user => (
+                                    <option key={user} value={user}>{user}</option>
+                                ))}
+                            </select>
 
-                                <label className="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={filter.todayOnly}
-                                        onChange={(e) => setFilter(f => ({...f, todayOnly: e.target.checked}))}
-                                        className="form-checkbox h-5 w-5 text-blue-600"
-                                    />
-                                    <span>Today Only</span>
-                                </label>
-
-                                <select
-                                    className="border rounded p-2"
-                                    value={filter.reviewStatus}
-                                    onChange={(e) => setFilter(f => ({...f, reviewStatus: e.target.value}))}
-                                >
-                                    <option value="all">All Images</option>
-                                    <option value="pending">Pending Review</option>
-                                    <option value="bad">Marked as Bad</option>
-                                </select>
+                            <div className="checkbox-wrapper">
+                                <input
+                                    type="checkbox"
+                                    checked={filter.todayOnly}
+                                    onChange={(e) => setFilter(f => ({...f, todayOnly: e.target.checked}))}
+                                    id="today-only"
+                                />
+                                <label htmlFor="today-only">Today Only</label>
                             </div>
 
-                            {/* Stats Bar */}
-                            <div className="flex gap-4 text-sm text-gray-600">
-                                <div>Total Images: {filteredImages.length}</div>
-                                <div>Pending Review: {filteredImages.filter(img => !img.bad).length}</div>
-                                <div>Marked Bad: {filteredImages.filter(img => img.bad).length}</div>
+                            <select
+                                value={filter.reviewStatus}
+                                onChange={(e) => setFilter(f => ({...f, reviewStatus: e.target.value}))}
+                            >
+                                <option value="all">All Images</option>
+                                <option value="pending">Pending Review</option>
+                                <option value="bad">Marked as Bad</option>
+                            </select>
+
+                            <div className="stats">
+                                Total Images: {filteredImages.length} | 
+                                Pending Review: {filteredImages.filter(img => !img.bad).length} | 
+                                Marked Bad: {filteredImages.filter(img => img.bad).length}
                             </div>
+
+                            <a href="index.html" className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                Back to Dashboard
+                            </a>
                         </div>
                     </div>
 
-                    {/* Image Grid */}
                     {loading ? (
                         <div className="flex items-center justify-center h-64">
                             <div className="text-xl">Loading...</div>
                         </div>
-                    ) : filteredImages.length === 0 ? (
-                        <div className="flex items-center justify-center h-64 text-gray-500">
-                            No images match the current filters
-                        </div>
                     ) : (
                         <div className="image-grid">
                             {filteredImages.map((image) => (
-                                <div key={image.rowIndex} className="image-card shadow-lg">
+                                <div key={image.rowIndex} className="image-card">
                                     {image.bad && (
                                         <div className="bad-marker">BAD</div>
                                     )}
-                                    <img
-                                        src={image.photoUrl}
-                                        alt={`${image.community} by ${image.username}`}
-                                        onClick={() => setSelectedImage(image)}
-                                    />
-                                    <div className="image-overlay">
-                                        <div className="text-white text-sm">
-                                            <div>{image.username}</div>
-                                            <div>{image.community}</div>
-                                            <div>{new Date(image.timestamp).toLocaleTimeString()}</div>
-                                        </div>
-                                        {!image.bad && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    markImageAsBad(image);
-                                                }}
-                                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-                                            >
-                                                Mark as Bad
-                                            </button>
-                                        )}
+                                    <div className="image-wrapper">
+                                        <img
+                                            src={getImageUrl(image.photoUrl)}
+                                            alt={`${image.community} by ${image.username}`}
+                                        />
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Modal for enlarged image */}
-                    {selectedImage && (
-                        <div 
-                            className="modal"
-                            onClick={() => setSelectedImage(null)}
-                        >
-                            <div className="modal-content">
-                                <img
-                                    src={selectedImage.photoUrl}
-                                    alt={`${selectedImage.community} by ${selectedImage.username}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                                <div className="absolute top-4 right-4 flex gap-4">
-                                    <a 
-                                        href={selectedImage.originalUrl}
-                                        target="_blank"
-                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        View Original
-                                    </a>
-                                    {!selectedImage.bad && (
+                                    <div className="image-info">
+                                        <div className="font-medium">{image.community}</div>
+                                        <div className="text-sm text-gray-600">
+                                            {image.username}<br/>
+                                            {formatDate(image.timestamp)}
+                                        </div>
+                                    </div>
+                                    {!image.bad && (
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                markImageAsBad(selectedImage);
-                                                setSelectedImage(null);
-                                            }}
-                                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                            onClick={() => markImageAsBad(image)}
+                                            className="bad-button"
                                         >
                                             Mark as Bad
                                         </button>
                                     )}
                                 </div>
-                            </div>
+                            ))}
                         </div>
                     )}
                 </div>
