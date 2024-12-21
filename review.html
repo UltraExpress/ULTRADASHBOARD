@@ -348,7 +348,7 @@
             const [users, setUsers] = React.useState([]);
             const [filter, setFilter] = React.useState({
                 selectedUser: '',
-                todayOnly: true,
+                todayOnly: false,
                 reviewStatus: 'all'
             });
 
@@ -359,21 +359,38 @@
 const parseDate = (timestamp) => {
     if (!timestamp) return null;
     
-    // Handle string format MM/DD/YYYY HH:MM:SS
+    // For spreadsheet format: MM/DD/YYYY HH:mm:ss
     if (typeof timestamp === 'string') {
-        const dateObj = new Date(timestamp);
-        if (!isNaN(dateObj)) {
-            return dateObj;
+        // First try direct parsing
+        const date = new Date(timestamp);
+        if (!isNaN(date)) {
+            return date;
         }
     }
-    
-    // Fallback for other formats if needed
-    if (typeof timestamp === 'string' && timestamp.startsWith('Date(')) {
-        const params = timestamp.slice(5, -1).split(',').map(Number);
-        return new Date(params[0], params[1] - 1, params[2], params[3] || 0, params[4] || 0);
-    }
-    return new Date(timestamp);
+    return null;
 };
+
+const isToday = (timestamp) => {
+    const date = parseDate(timestamp);
+    if (!date) return false;
+    
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+};
+
+
+
+
+
+
+
+
+
+
+
+            
 
             const formatDate = (timestamp) => {
                 const date = parseDate(timestamp);
