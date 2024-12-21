@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test markBadPhoto Function</title>
+    <title>Mark Photo as Bad</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -52,37 +52,39 @@
 </head>
 <body>
     <div class="container">
-        <h1>Test markBadPhoto Function</h1>
+        <h1>Mark Photo as Bad</h1>
         
         <h2>Target Photo URL:</h2>
         <div class="url-display">
             https://drive.google.com/file/d/1JuYK2k8Sb6FTfh58v7R409IWjLoJKV9G/view?usp=drivesdk
         </div>
 
-        <button onclick="testMarkBadPhoto()">Test markBadPhoto</button>
+        <button onclick="markBadPhoto()">Mark as Bad</button>
         
         <div id="status" class="status"></div>
     </div>
 
     <script>
-        async function testMarkBadPhoto() {
+        async function markBadPhoto() {
             const statusDiv = document.getElementById('status');
-            statusDiv.innerHTML = 'Testing...';
+            statusDiv.innerHTML = 'Processing...';
             statusDiv.className = 'status';
 
             const photoUrl = 'https://drive.google.com/file/d/1JuYK2k8Sb6FTfh58v7R409IWjLoJKV9G/view?usp=drivesdk';
             
             try {
-                const response = await fetch('https://script.google.com/macros/s/AKfycbwVhe8rYd7JKwn1qiM0NEoMZaeeHFonqKDb_eOEPlGU4Yf_ET4wULC_zi2qSNewg7FA/exec', {
+                const formData = new URLSearchParams({
+                    identifier: photoUrl
+                }).toString();
+
+                // Replace YOUR_NEW_SCRIPT_URL with the URL from your new deployment
+                const response = await fetch('https://script.google.com/macros/s/AKfycbwH_tSBzTLayS8HoDJHK3cKXVycFaxJnllfeYep-ct7eA1Xt8WcB1CUQiYONgNT8HTC/exec', {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: new URLSearchParams({
-                        action: 'markBad',
-                        identifier: photoUrl
-                    })
+                    body: formData
                 });
 
                 statusDiv.innerHTML = 'Request sent successfully! Check the spreadsheet for updates.';
@@ -90,6 +92,7 @@
             } catch (error) {
                 statusDiv.innerHTML = 'Error: ' + error.message;
                 statusDiv.className = 'status error';
+                console.error('Error:', error);
             }
         }
     </script>
