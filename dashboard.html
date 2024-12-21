@@ -504,88 +504,97 @@ const DataManager = {
         }
     },
 
-    processData(data) {
-        const userStats = {};
-        const markers = [];
+processData(data) {
+    const userStats = {};
+    const markers = [];
+    
+    // Get today's date parts
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const year = now.getFullYear();
+    const todayStr = `${month}/${day}/${year}`;
+    console.log('Looking for entries with date:', todayStr);
+    
+    data.table.rows.forEach(row => {
+        const timestamp = row.c[0]?.v;
+        const username = row.c[1]?.v || 'Anonymous';
         
-        // Get today's date parts
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const year = now.getFullYear();
-        const todayStr = `${month}/${day}/${year}`;
-        
-        data.table.rows.forEach(row => {
-            const timestamp = row.c[0]?.v;
-            const username = row.c[1]?.v || 'Anonymous';
-            const community = row.c[2]?.v || 'Unknown Location';
-            const lat = row.c[3]?.v ? parseFloat(row.c[3].v) : null;
-            const lng = row.c[4]?.v ? parseFloat(row.c[4].v) : null;
-            const originalPhotoUrl = row.c[5]?.v;
-            const isPaid = row.c[6]?.v === 'YES';
-            
-            // Initialize user if not exists
-            if (!userStats[username]) {
-                userStats[username] = {
-                    totalContributions: 0,
-                    totalPaid: 0,
-                    todayTotal: 0,
-                    communities: {},
-                    dates: new Set()
-                };
-            }
+        // Initialize user if not exists
+        if (!userStats[username]) {
+            userStats[username] = {
+                totalContributions: 0,
+                totalPaid: 0,
+                todayTotal: 0,
+                communities: {},
+                dates: new Set()
+            };
+        }
 
-            // Count today's total - do this for ALL entries matching today's date
-            if (timestamp && timestamp.split(' ')[0] === todayStr) {
+        // Count today's total
+        if (timestamp) {
+            const entryDate = timestamp.split(' ')[0];
+            console.log(`Checking entry for ${username}:`, {
+                timestamp,
+                entryDate,
+                matches: entryDate === todayStr
+            });
+            if (entryDate === todayStr) {
                 userStats[username].todayTotal++;
+                console.log(`Found today's entry for ${username}! New total:`, userStats[username].todayTotal);
             }
-                
-            // Initialize community if needed
-            if (community && !userStats[username].communities[community]) {
-                userStats[username].communities[community] = {
-                    count: 0,
-                    paidCount: 0
-                };
+        }
+
+        // Rest of your code stays exactly the same...
+        const community = row.c[2]?.v || 'Unknown Location';
+        const lat = row.c[3]?.v ? parseFloat(row.c[3].v) : null;
+        const lng = row.c[4]?.v ? parseFloat(row.c[4].v) : null;
+        const originalPhotoUrl = row.c[5]?.v;
+        const isPaid = row.c[6]?.v === 'YES';
+            
+        if (community && !userStats[username].communities[community]) {
+            userStats[username].communities[community] = {
+                count: 0,
+                paidCount: 0
+            };
+        }
+        
+        if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+            userStats[username].totalContributions++;
+            if (community) {
+                userStats[username].communities[community].count++;
             }
             
-            // Only count these stats if we have valid GPS
-            if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-                userStats[username].totalContributions++;
+            if (isPaid) {
+                userStats[username].totalPaid++;
                 if (community) {
-                    userStats[username].communities[community].count++;
+                    userStats[username].communities[community].paidCount++;
                 }
-                
-                if (isPaid) {
-                    userStats[username].totalPaid++;
-                    if (community) {
-                        userStats[username].communities[community].paidCount++;
-                    }
-                }
-                
-                if (timestamp) {
-                    userStats[username].dates.add(timestamp);
-                }
-                
-                // Process photo URL
-                const photoUrl = getGoogleDriveImageUrl(originalPhotoUrl);
-                let fileId = '';
-                if (originalPhotoUrl) {
-                    if (originalPhotoUrl.includes('/file/d/')) {
-                        fileId = originalPhotoUrl.match(/\/file\/d\/([^/]+)/)?.[1];
-                    } else if (originalPhotoUrl.includes('id=')) {
-                        fileId = originalPhotoUrl.match(/id=([^&]+)/)?.[1];
-                    }
-                }
-                
-                // Add marker
-                markers.push({
-                    lat, lng, community, username, timestamp, photoUrl, fileId
-                });
             }
-        });
-        
-        return { userStats, markers };
-    }
+            
+            if (timestamp) {
+                userStats[username].dates.add(timestamp);
+            }
+            
+            const photoUrl = getGoogleDriveImageUrl(originalPhotoUrl);
+            let fileId = '';
+            if (originalPhotoUrl) {
+                if (originalPhotoUrl.includes('/file/d/')) {
+                    fileId = originalPhotoUrl.match(/\/file\/d\/([^/]+)/)?.[1];
+                } else if (originalPhotoUrl.includes('id=')) {
+                    fileId = originalPhotoUrl.match(/id=([^&]+)/)?.[1];
+                }
+            }
+            
+            markers.push({
+                lat, lng, community, username, timestamp, photoUrl, fileId
+            });
+        }
+    });
+    
+    console.log('Final stats:', userStats);
+    return { userStats, markers };
+}
 };
     
    
