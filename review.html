@@ -443,12 +443,35 @@ const markImageAsBad = async (image) => {
 
             
 
-            const isToday = (timestamp) => {
-                const date = parseDate(timestamp);
-                if (!date || isNaN(date)) return false;
-                const today = new Date();
-                return date.toDateString() === today.toDateString();
-            };
+const isToday = (timestamp) => {
+    // Add console log to debug the incoming timestamp
+    console.log('Checking timestamp:', timestamp);
+    
+    const date = parseDate(timestamp);
+    if (!date || isNaN(date)) {
+        console.log('Invalid date for:', timestamp);
+        return false;
+    }
+    
+    const today = new Date();
+    const isMatch = (
+        date.getFullYear() === today.getFullYear() &&
+        date.getMonth() === today.getMonth() &&
+        date.getDate() === today.getDate()
+    );
+    
+    // Debug log the comparison result
+    console.log('Date comparison:', {
+        timestamp,
+        date: date.toLocaleString(),
+        today: today.toLocaleString(),
+        isMatch
+    });
+    
+    return isMatch;
+};
+
+            
 
             const filteredImages = images.filter(img => {
                 if (filter.selectedUser && img.username !== filter.selectedUser) return false;
