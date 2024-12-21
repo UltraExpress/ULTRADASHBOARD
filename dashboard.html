@@ -503,25 +503,26 @@ const DataManager = {
         }
     },
 
-processData(data) {
-    const userStats = {};
-    const markers = [];
-    
-    // Get today's exact date string (e.g., "12/20/2024")
-    const now = new Date();
-    const todayStr = `${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')}/${now.getFullYear()}`;
-    
-    data.table.rows.forEach(row => {
-        const timestamp = row.c[0]?.v;  // This will be like "12/20/2024 20:25:10"
-        const username = row.c[1]?.v || 'Anonymous';
-        const community = row.c[2]?.v || 'Unknown Location';
-        const lat = row.c[3]?.v;
-        const lng = row.c[4]?.v;
-        const originalPhotoUrl = row.c[5]?.v;
-        const isPaid = row.c[6]?.v === 'YES';
-
-        if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-            // Initialize user stats if needed
+    processData(data) {
+        const userStats = {};
+        const markers = [];
+        
+        // Get today's date parts
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const year = now.getFullYear();
+        const todayStr = `${month}/${day}/${year}`; // e.g., "12/20/2024"
+        
+        data.table.rows.forEach(row => {
+            const timestamp = row.c[0]?.v;  // e.g., "12/20/2024 20:25:10"
+            const username = row.c[1]?.v || 'Anonymous';
+            const community = row.c[2]?.v || 'Unknown Location';
+            const lat = row.c[0]?.v ? parseFloat(row.c[3]?.v) : null;
+            const lng = row.c[0]?.v ? parseFloat(row.c[4]?.v) : null;
+            const originalPhotoUrl = row.c[5]?.v;
+            const isPaid = row.c[6]?.v === 'YES';
+            
             if (!userStats[username]) {
                 userStats[username] = {
                     totalContributions: 0,
@@ -531,53 +532,57 @@ processData(data) {
                     dates: new Set()
                 };
             }
-
-            // Initialize community stats if needed
-            if (!userStats[username].communities[community]) {
+            
+            if (community && !userStats[username].communities[community]) {
                 userStats[username].communities[community] = {
                     count: 0,
                     paidCount: 0
                 };
             }
-
-            // Update totals
-            userStats[username].totalContributions++;
-            userStats[username].communities[community].count++;
-
-            // Check if entry is from today by comparing the date part
-            const entryDateStr = timestamp.split(' ')[0];  // Get just the date part
-            if (entryDateStr === todayStr) {
-                userStats[username].todayTotal++;
-            }
-
-            if (isPaid) {
-                userStats[username].communities[community].paidCount++;
-                userStats[username].totalPaid++;
-            }
-
-            if (timestamp) {
-                userStats[username].dates.add(timestamp);
-            }
-
-            // Add marker data
-            const photoUrl = getGoogleDriveImageUrl(originalPhotoUrl);
-            let fileId = '';
-            if (originalPhotoUrl) {
-                if (originalPhotoUrl.includes('/file/d/')) {
-                    fileId = originalPhotoUrl.match(/\/file\/d\/([^/]+)/)?.[1];
-                } else if (originalPhotoUrl.includes('id=')) {
-                    fileId = originalPhotoUrl.match(/id=([^&]+)/)?.[1];
+            
+            // Check if this entry has valid coordinates
+            if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                userStats[username].totalContributions++;
+                if (community) {
+                    userStats[username].communities[community].count++;
                 }
+                
+                // Count today's entries - match exact date string
+                if (timestamp && timestamp.startsWith(todayStr)) {
+                    userStats[username].todayTotal++;
+                }
+                
+                if (isPaid) {
+                    userStats[username].totalPaid++;
+                    if (community) {
+                        userStats[username].communities[community].paidCount++;
+                    }
+                }
+                
+                if (timestamp) {
+                    userStats[username].dates.add(timestamp);
+                }
+                
+                // Process photo URL
+                const photoUrl = getGoogleDriveImageUrl(originalPhotoUrl);
+                let fileId = '';
+                if (originalPhotoUrl) {
+                    if (originalPhotoUrl.includes('/file/d/')) {
+                        fileId = originalPhotoUrl.match(/\/file\/d\/([^/]+)/)?.[1];
+                    } else if (originalPhotoUrl.includes('id=')) {
+                        fileId = originalPhotoUrl.match(/id=([^&]+)/)?.[1];
+                    }
+                }
+                
+                // Add marker
+                markers.push({
+                    lat, lng, community, username, timestamp, photoUrl, fileId
+                });
             }
-
-            markers.push({
-                lat, lng, community, username, timestamp, photoUrl, fileId
-            });
-        }
-    });
-
-    return { userStats, markers };
-}
+        });
+        
+        return { userStats, markers };
+    }
 };
     
    
