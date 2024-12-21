@@ -493,8 +493,11 @@ function updateTable() {
             ` : ''}
         </td>
         <td class="px-6 py-4">
-            <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
-                    onchange="updateStatus('${report['Part ID']}', sanitizeStatus(this.value))">
+<select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+        onchange="prompt('Password:')=='ultra2024' ? updateStatus('${report['Part ID']}', sanitizeStatus(this.value)) : fetchData()">
+
+
+                    
                 <option ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
                 <option ${status === 'Parts On Order' ? 'selected' : ''}>Parts On Order</option>
                 <option ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
