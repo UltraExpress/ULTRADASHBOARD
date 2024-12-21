@@ -298,6 +298,7 @@ function formatDate(dateStr) {
 
 const StatsPanel = {
     updatePanel(userStats) {
+        console.log('Updating panel with stats:', userStats);  // Add this debug line
         const container = document.getElementById('user-stats-container');
         container.innerHTML = '';
         
