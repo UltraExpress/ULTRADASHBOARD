@@ -385,7 +385,7 @@
                 setLoading(false);
             };
 
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9F2SIZ2FVg_HH98-3B-Q8EvbKM2IooNYtiQgonJ_jQRdqQTeNvb_77x55GW5ERFVrsg/exec';
+            
 
 
             
@@ -394,21 +394,28 @@ const markImageAsBad = async (image) => {
     try {
         document.querySelector('.loading-overlay').style.display = 'flex';
         
-        const formData = new URLSearchParams();
-        formData.append('action', 'markBad');  // Changed to match server expectations
-        formData.append('identifier', image.photoUrl);  // Changed to match server expectations
-                
-        await fetch(SCRIPT_URL, {
+        // Use the same FormData structure as the working test code
+        const formData = new URLSearchParams({
+            identifier: image.photoUrl
+        }).toString();
+
+        // Use the working API endpoint
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwH_tSBzTLayS8HoDJHK3cKXVycFaxJnllfeYep-ct7eA1Xt8WcB1CUQiYONgNT8HTC/exec', {
             method: 'POST',
             mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
             body: formData
         });
 
+        // Update local state
         const updatedImages = images.map(img => 
             img.rowIndex === image.rowIndex ? {...img, bad: true} : img
         );
         setImages(updatedImages);
         
+        // Hide loading overlay after a short delay
         setTimeout(() => {
             document.querySelector('.loading-overlay').style.display = 'none';
         }, 1000);
