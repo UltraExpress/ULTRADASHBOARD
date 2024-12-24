@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+        <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         .date-urgent {
             background-color: #FF4444;
@@ -59,7 +63,80 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-    </style>
+
+
+
+</style>
+    <!-- Add the new script tag RIGHT HERE, after the style tag -->
+    <script type="text/babel">
+        const SimpleMediaViewer = ({ photoUrl, videoUrl }) => {
+            const [showModal, setShowModal] = React.useState(false);
+            const [currentMedia, setCurrentMedia] = React.useState(null);
+            const [mediaType, setMediaType] = React.useState(null);
+
+            const openMedia = (url, type) => {
+                setCurrentMedia(url);
+                setMediaType(type);
+                setShowModal(true);
+            };
+
+            return (
+                <>
+                    <div className="space-x-2">
+                        {photoUrl && (
+                            <button 
+                                onClick={() => openMedia(photoUrl, 'image')}
+                                className="text-blue-600 hover:text-blue-900"
+                            >
+                                📷 Photo
+                            </button>
+                        )}
+                        {videoUrl && (
+                            <button 
+                                onClick={() => openMedia(videoUrl, 'video')}
+                                className="text-blue-600 hover:text-blue-900"
+                            >
+                                🎥 Video
+                            </button>
+                        )}
+                    </div>
+
+                    {showModal && (
+                        <div 
+                            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                            onClick={() => setShowModal(false)}
+                        >
+                            <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+                                {mediaType === 'image' && (
+                                    <img 
+                                        src={currentMedia} 
+                                        alt="Preview" 
+                                        className="max-w-full h-auto"
+                                    />
+                                )}
+                                {mediaType === 'video' && (
+                                    <video 
+                                        controls 
+                                        className="max-w-full"
+                                        autoPlay
+                                    >
+                                        <source src={currentMedia} type="video/quicktime" />
+                                        Your browser does not support the video tag.
+                                    </video>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        };
+    </script>
+</head>
+
+
+
+
+    
 </head>
 <body class="bg-gray-100">
     <!-- Loading Overlay -->
@@ -347,80 +424,98 @@
             `;
         }
 
-        function updateTable() {
-            const start = (currentPage - 1) * ITEMS_PER_PAGE;
-            const end = start + ITEMS_PER_PAGE;
-            const pageReports = filteredReports.slice(start, end);
+function updateTable() {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const pageReports = filteredReports.slice(start, end);
+    const tbody = document.getElementById('reportsTableBody');
+    tbody.innerHTML = pageReports.map(report => {
+        const status = report.status || '';
+        const location = report.location || '';
+        const partName = report.part_name || '';
+        return `
+            <tr class="${status === 'Complete' ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${status === 'Complete' ? `
+                        <div class="p-2">
+                            <div class="text-sm">${moment(report.timestamp).format('MMM D, h:mm A')}</div>
+                            <div class="text-xs text-gray-500">Completed: ${moment(report.ticket_closed || report.timestamp).format('MMM D, h:mm A')}</div>
+                        </div>` : getDateDisplay(report.timestamp)}
+                </td>
+                <td class="px-6 py-4">${location}</td>
+                <td class="px-6 py-4">${partName}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(status)}">
+                        ${status}
+                    </span>
+                    ${status === 'Complete' ? `
+                        <div class="text-xs text-gray-500 mt-1">
+                            Time to complete: ${calculateCompletionTime(report.timestamp, report.ticket_closed)}
+                        </div>
+                    ` : ''}
+                </td>
+                <td class="px-6 py-4">
+                    <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
+                            onchange="prompt('Password:')=='ultra2024' ? updateStatus('${report.part_id}', this.value) : fetchData()">
+                        <option value="Needs Work" ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
+                        <option value="In Progress" ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="Complete" ${status === 'Complete' ? 'selected' : ''}>Complete</option>
+                    </select>
+                </td>
+                <td class="px-6 py-4">
+                    <div id="media-${report.part_id}"></div>
+                </td>
+                <td class="px-6 py-4">
+                    ${report.notes ? `
+                        <button onclick="alert('${report.notes?.replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-900">View Notes</button>
+                    ` : 'No notes'}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                        report.priority === 'Critical' ? 'bg-red-100 text-red-800' :
+                        report.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+                        'bg-blue-100 text-blue-800'
+                    }">
+                        ${report.priority || 'Medium'}
+                    </span>
+                </td>
+            </tr>
+        `;
+    }).join('');
 
-            const tbody = document.getElementById('reportsTableBody');
-            tbody.innerHTML = pageReports.map(report => {
-                const status = report.status || '';
-                const location = report.location || '';
-                const partName = report.part_name || '';
-
-                return `
-                    <tr class="${status === 'Complete' ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            ${status === 'Complete' ? `
-                                <div class="p-2">
-                                    <div class="text-sm">${moment(report.timestamp).format('MMM D, h:mm A')}</div>
-                                    <div class="text-xs text-gray-500">Completed: ${moment(report.ticket_closed || report.timestamp).format('MMM D, h:mm A')}</div>
-                                </div>` : getDateDisplay(report.timestamp)}
-                        </td>
-                        <td class="px-6 py-4">${location}</td>
-                        <td class="px-6 py-4">${partName}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(status)}">
-                                ${status}
-                            </span>
-                            ${status === 'Complete' ? `
-                                <div class="text-xs text-gray-500 mt-1">
-                                    Time to complete: ${calculateCompletionTime(report.timestamp, report.ticket_closed)}
-                                </div>
-                            ` : ''}
-                        </td>
-                        <td class="px-6 py-4">
-                            <select class="status-dropdown w-full rounded-md border-gray-300 shadow-sm py-2"
-                                    onchange="prompt('Password:')=='ultra2024' ? updateStatus('${report.part_id}', this.value) : fetchData()">
-                                <option value="Needs Work" ${status === 'Needs Work' ? 'selected' : ''}>Needs Work</option>
-                                <option value="In Progress" ${status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Complete" ${status === 'Complete' ? 'selected' : ''}>Complete</option>
-                            </select>
-                        </td>
-                        <td class="px-6 py-4">
-                            ${report.photo_link || report.video_link ? `
-                                ${report.photo_link ? `
-                                    <a href="#" onclick="showImage('${report.photo_link}')" class="text-blue-600 hover:text-blue-900 mr-2">📷 Photo</a>
-                                ` : ''}
-                                ${report.video_link ? `
-                                    <a href="${report.video_link}" target="_blank" class="text-blue-600 hover:text-blue-900">🎥 Video</a>
-                                ` : ''}
-                            ` : 'No media'}
-                        </td>
-                        <td class="px-6 py-4">
-                            ${report.notes ? `
-                                <button onclick="alert('${report.notes?.replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-900">View Notes</button>
-                            ` : 'No notes'}
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-                                report.priority === 'Critical' ? 'bg-red-100 text-red-800' :
-                                report.priority === 'High' ? 'bg-orange-100 text-orange-800' :
-                                'bg-blue-100 text-blue-800'
-                            }">
-                                ${report.priority || 'Medium'}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            document.getElementById('paginationText').textContent = 
-                `Showing ${start + 1} to ${Math.min(end, filteredReports.length)} of ${filteredReports.length} results`;
-
-            document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = end >= filteredReports.length;
+    // Add React components to media cells
+    pageReports.forEach(report => {
+        const container = document.getElementById(`media-${report.part_id}`);
+        if (container) {
+            const root = ReactDOM.createRoot(container);
+            root.render(
+                React.createElement(SimpleMediaViewer, {
+                    photoUrl: report.photo_link,
+                    videoUrl: report.video_link
+                })
+            );
         }
+    });
+
+    document.getElementById('paginationText').textContent = 
+        `Showing ${start + 1} to ${Math.min(end, filteredReports.length)} of ${filteredReports.length} results`;
+
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = end >= filteredReports.length;
+}
+
+
+
+
+
+
+
+        
+
+
+
+
+        
 
         function applyFilters() {
             const location = document.getElementById('locationFilter').value;
