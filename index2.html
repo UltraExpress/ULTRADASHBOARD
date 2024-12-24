@@ -67,14 +67,18 @@
 
 
 </style>
+   
+    
+    
     <!-- Add the new script tag RIGHT HERE, after the style tag -->
-    <script type="text/babel">
+<script type="text/babel">
         const SimpleMediaViewer = ({ photoUrl, videoUrl }) => {
             const [showModal, setShowModal] = React.useState(false);
             const [currentMedia, setCurrentMedia] = React.useState(null);
             const [mediaType, setMediaType] = React.useState(null);
 
             const openMedia = (url, type) => {
+                console.log('Opening media:', url, type); // Debug log
                 setCurrentMedia(url);
                 setMediaType(type);
                 setShowModal(true);
@@ -106,12 +110,14 @@
                             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
                             onClick={() => setShowModal(false)}
                         >
-                            <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+                            <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto" 
+                                 onClick={e => e.stopPropagation()}>
                                 {mediaType === 'image' && (
                                     <img 
                                         src={currentMedia} 
                                         alt="Preview" 
                                         className="max-w-full h-auto"
+                                        onError={(e) => console.error('Image load error:', e)}
                                     />
                                 )}
                                 {mediaType === 'video' && (
@@ -119,8 +125,9 @@
                                         controls 
                                         className="max-w-full"
                                         autoPlay
+                                        onError={(e) => console.error('Video load error:', e)}
                                     >
-                                        <source src={currentMedia} type="video/quicktime" />
+                                        <source src={currentMedia} />
                                         Your browser does not support the video tag.
                                     </video>
                                 )}
@@ -130,7 +137,14 @@
                 </>
             );
         };
+
+        // Make it available globally
+        window.SimpleMediaViewer = SimpleMediaViewer;
     </script>
+
+
+
+    
 </head>
 
 
@@ -424,6 +438,13 @@
             `;
         }
 
+
+
+
+        
+
+        
+
 function updateTable() {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
@@ -487,13 +508,17 @@ function updateTable() {
     pageReports.forEach(report => {
         const container = document.getElementById(`media-${report.part_id}`);
         if (container) {
-            const root = ReactDOM.createRoot(container);
-            root.render(
-                React.createElement(SimpleMediaViewer, {
-                    photoUrl: report.photo_link,
-                    videoUrl: report.video_link
-                })
-            );
+            try {
+                const root = ReactDOM.createRoot(container);
+                root.render(
+                    React.createElement(window.SimpleMediaViewer, {
+                        photoUrl: report.photo_link,
+                        videoUrl: report.video_link
+                    })
+                );
+            } catch (error) {
+                console.error('Error rendering media viewer:', error);
+            }
         }
     });
 
@@ -503,8 +528,6 @@ function updateTable() {
     document.getElementById('prevPage').disabled = currentPage === 1;
     document.getElementById('nextPage').disabled = end >= filteredReports.length;
 }
-
-
 
 
 
