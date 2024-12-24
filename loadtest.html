@@ -1,1 +1,177 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Media Test</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const supabaseUrl = 'https://glmnunnmbybqevgpjwlg.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsbW51bm5tYnlicWV2Z3Bqd2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUwNjQwOTMsImV4cCI6MjA1MDY0MDA5M30.6XnMRH86CpQCoImyQ_aRFMZIPYbZkOk0onW0CL9wqXs';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const MediaTester = () => {
+            const [mediaData, setMediaData] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [error, setError] = React.useState(null);
+
+            React.useEffect(() => {
+                fetchMediaData();
+            }, []);
+
+            const fetchMediaData = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+
+                    // First, get the maintenance reports
+                    const { data: reports, error: reportsError } = await supabase
+                        .from('maintenance_reports')
+                        .select('*')
+                        .not('photo_link', 'is', null)
+                        .limit(5);
+
+                    if (reportsError) throw reportsError;
+
+                    // For each report with media, get signed URLs
+                    const mediaWithUrls = await Promise.all(reports.map(async (report) => {
+                        let signedPhotoUrl = null;
+                        let signedVideoUrl = null;
+
+                        if (report.photo_link) {
+                            const { data: photoData } = await supabase.storage
+                                .from('public')
+                                .createSignedUrl(report.photo_link, 3600);
+                            signedPhotoUrl = photoData?.signedUrl;
+                        }
+
+                        if (report.video_link) {
+                            const { data: videoData } = await supabase.storage
+                                .from('public')
+                                .createSignedUrl(report.video_link, 3600);
+                            signedVideoUrl = videoData?.signedUrl;
+                        }
+
+                        return {
+                            ...report,
+                            signedPhotoUrl,
+                            signedVideoUrl
+                        };
+                    }));
+
+                    setMediaData(mediaWithUrls);
+                } catch (err) {
+                    console.error('Error fetching media:', err);
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            if (loading) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen">
+                        <div className="text-xl">Loading media data...</div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        Error: {error}
+                    </div>
+                );
+            }
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-2xl font-bold mb-6">Supabase Media Test</h1>
+                    
+                    <div className="space-y-8">
+                        {mediaData.map((item, index) => (
+                            <div key={index} className="bg-white rounded-lg shadow-lg p-6">
+                                <h2 className="text-lg font-semibold mb-4">Media Item {index + 1}</h2>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="font-medium mb-2">Original URLs:</h3>
+                                        <div className="text-sm text-gray-600">
+                                            <div>Photo: {item.photo_link || 'None'}</div>
+                                            <div>Video: {item.video_link || 'None'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-medium mb-2">Signed URLs:</h3>
+                                        <div className="text-sm text-gray-600">
+                                            <div>Photo: {item.signedPhotoUrl || 'None'}</div>
+                                            <div>Video: {item.signedVideoUrl || 'None'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {item.signedPhotoUrl && (
+                                            <div>
+                                                <h3 className="font-medium mb-2">Photo Preview:</h3>
+                                                <img 
+                                                    src={item.signedPhotoUrl}
+                                                    alt="Media preview"
+                                                    className="max-w-full h-auto rounded"
+                                                    onError={(e) => {
+                                                        console.error(`Error loading image ${index}:`, e);
+                                                        e.target.parentElement.innerHTML = 'Error loading image';
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {item.signedVideoUrl && (
+                                            <div>
+                                                <h3 className="font-medium mb-2">Video Preview:</h3>
+                                                <video 
+                                                    controls
+                                                    className="max-w-full rounded"
+                                                    onError={(e) => {
+                                                        console.error(`Error loading video ${index}:`, e);
+                                                        e.target.parentElement.innerHTML = 'Error loading video';
+                                                    }}
+                                                >
+                                                    <source src={item.signedVideoUrl} type="video/mp4" />
+                                                    <source src={item.signedVideoUrl} type="video/webm" />
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8">
+                        <button 
+                            onClick={fetchMediaData}
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        >
+                            Refresh Media
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MediaTester />);
+    </script>
+</body>
+</html>
