@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,15 +22,28 @@
             const [mediaData, setMediaData] = React.useState([]);
             const [loading, setLoading] = React.useState(true);
             const [error, setError] = React.useState(null);
+            const [debug, setDebug] = React.useState(null);
 
             React.useEffect(() => {
                 fetchMediaData();
             }, []);
 
+            const getMediaPath = (url) => {
+                try {
+                    // Extract the path after /media/
+                    const match = url.match(/\/media\/(.+)$/);
+                    return match ? match[1] : null;
+                } catch (e) {
+                    console.error('Error parsing URL:', e);
+                    return null;
+                }
+            };
+
             const fetchMediaData = async () => {
                 try {
                     setLoading(true);
                     setError(null);
+                    setDebug(null);
 
                     // First, get the maintenance reports
                     const { data: reports, error: reportsError } = await supabase
@@ -42,29 +54,57 @@
 
                     if (reportsError) throw reportsError;
 
+                    setDebug({
+                        step: 'Got reports',
+                        count: reports.length,
+                        firstReport: reports[0]
+                    });
+
                     // For each report with media, get signed URLs
                     const mediaWithUrls = await Promise.all(reports.map(async (report) => {
                         let signedPhotoUrl = null;
                         let signedVideoUrl = null;
+                        let photoError = null;
+                        let videoError = null;
 
                         if (report.photo_link) {
-                            const { data: photoData } = await supabase.storage
-                                .from('public')
-                                .createSignedUrl(report.photo_link, 3600);
-                            signedPhotoUrl = photoData?.signedUrl;
+                            const photoPath = getMediaPath(report.photo_link);
+                            if (photoPath) {
+                                try {
+                                    const { data: photoData, error } = await supabase.storage
+                                        .from('media')  // Changed from 'public' to 'media'
+                                        .createSignedUrl(photoPath, 3600);
+                                    
+                                    if (error) throw error;
+                                    signedPhotoUrl = photoData?.signedUrl;
+                                } catch (e) {
+                                    photoError = e.message;
+                                }
+                            }
                         }
 
                         if (report.video_link) {
-                            const { data: videoData } = await supabase.storage
-                                .from('public')
-                                .createSignedUrl(report.video_link, 3600);
-                            signedVideoUrl = videoData?.signedUrl;
+                            const videoPath = getMediaPath(report.video_link);
+                            if (videoPath) {
+                                try {
+                                    const { data: videoData, error } = await supabase.storage
+                                        .from('media')  // Changed from 'public' to 'media'
+                                        .createSignedUrl(videoPath, 3600);
+                                    
+                                    if (error) throw error;
+                                    signedVideoUrl = videoData?.signedUrl;
+                                } catch (e) {
+                                    videoError = e.message;
+                                }
+                            }
                         }
 
                         return {
                             ...report,
                             signedPhotoUrl,
-                            signedVideoUrl
+                            signedVideoUrl,
+                            photoError,
+                            videoError
                         };
                     }));
 
@@ -85,17 +125,21 @@
                 );
             }
 
-            if (error) {
-                return (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                        Error: {error}
-                    </div>
-                );
-            }
-
             return (
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-2xl font-bold mb-6">Supabase Media Test</h1>
+                    
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                            Error: {error}
+                        </div>
+                    )}
+
+                    {debug && (
+                        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-6">
+                            <pre>{JSON.stringify(debug, null, 2)}</pre>
+                        </div>
+                    )}
                     
                     <div className="space-y-8">
                         {mediaData.map((item, index) => (
@@ -114,8 +158,8 @@
                                     <div>
                                         <h3 className="font-medium mb-2">Signed URLs:</h3>
                                         <div className="text-sm text-gray-600">
-                                            <div>Photo: {item.signedPhotoUrl || 'None'}</div>
-                                            <div>Video: {item.signedVideoUrl || 'None'}</div>
+                                            <div>Photo: {item.signedPhotoUrl || item.photoError || 'None'}</div>
+                                            <div>Video: {item.signedVideoUrl || item.videoError || 'None'}</div>
                                         </div>
                                     </div>
 
