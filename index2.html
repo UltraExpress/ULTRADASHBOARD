@@ -72,17 +72,48 @@
     
     <!-- Add the new script tag RIGHT HERE, after the style tag -->
 <script type="text/babel">
-        const SimpleMediaViewer = ({ photoUrl, videoUrl }) => {
-            const [showModal, setShowModal] = React.useState(false);
-            const [currentMedia, setCurrentMedia] = React.useState(null);
-            const [mediaType, setMediaType] = React.useState(null);
+const SimpleMediaViewer = ({ photoUrl, videoUrl }) => {
+    const [showModal, setShowModal] = React.useState(false);
+    const [currentMedia, setCurrentMedia] = React.useState(null);
+    const [mediaType, setMediaType] = React.useState(null);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState(null);
 
-            const openMedia = (url, type) => {
-                console.log('Opening media:', url, type); // Debug log
-                setCurrentMedia(url);
-                setMediaType(type);
-                setShowModal(true);
-            };
+
+const getMediaPath = (url) => {
+        try {
+            const match = url.match(/\/media\/(.+)$/);
+            return match ? match[1] : null;
+        } catch (e) {
+            console.error('Error parsing URL:', e);
+            return null;
+        }
+    };
+    
+
+const openMedia = async (url, type) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const mediaPath = getMediaPath(url);
+            if (!mediaPath) throw new Error('Invalid media path');
+
+            const { data, error: signedUrlError } = await supabase.storage
+                .from('media')
+                .createSignedUrl(mediaPath, 3600);
+
+            if (signedUrlError) throw signedUrlError;
+            
+            setCurrentMedia(data.signedUrl);
+            setMediaType(type);
+            setShowModal(true);
+        } catch (err) {
+            console.error('Error getting signed URL:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
             return (
                 <>
@@ -110,28 +141,58 @@
                             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
                             onClick={() => setShowModal(false)}
                         >
-                            <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto" 
-                                 onClick={e => e.stopPropagation()}>
-                                {mediaType === 'image' && (
-                                    <img 
-                                        src={currentMedia} 
-                                        alt="Preview" 
-                                        className="max-w-full h-auto"
-                                        onError={(e) => console.error('Image load error:', e)}
-                                    />
-                                )}
-                                {mediaType === 'video' && (
-                                    <video 
-                                        controls 
-                                        className="max-w-full"
-                                        autoPlay
-                                        onError={(e) => console.error('Video load error:', e)}
-                                    >
-                                        <source src={currentMedia} />
-                                        Your browser does not support the video tag.
-                                    </video>
-                                )}
-                            </div>
+                        
+                            
+                            
+                            
+<div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto" 
+         onClick={e => e.stopPropagation()}>
+        {loading ? (
+            <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+        ) : error ? (
+            <div className="text-red-600 p-4 text-center">
+                Error loading media: {error}
+            </div>
+        ) : (
+            <>
+                {mediaType === 'image' && (
+                    <img 
+                        src={currentMedia} 
+                        alt="Preview" 
+                        className="max-w-full h-auto"
+                        onError={(e) => {
+                            console.error('Image load error:', e);
+                            setError('Failed to load image');
+                        }}
+                    />
+                )}
+                {mediaType === 'video' && (
+                    <video 
+                        controls 
+                        className="max-w-full"
+                        autoPlay
+                        onError={(e) => {
+                            console.error('Video load error:', e);
+                            setError('Failed to load video');
+                        }}
+                    >
+                        <source src={currentMedia} type="video/mp4" />
+                        <source src={currentMedia} type="video/webm" />
+                        Your browser does not support the video tag.
+                    </video>
+                )}
+            </>
+        )}
+    </div>
+
+
+
+
+
+
+                            
                         </div>
                     )}
                 </>
